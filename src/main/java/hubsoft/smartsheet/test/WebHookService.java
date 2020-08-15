@@ -7,27 +7,34 @@ import com.smartsheet.api.models.*;
 import com.smartsheet.api.models.enums.ObjectExclusion;
 import com.smartsheet.api.models.enums.SheetTemplateInclusion;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.naming.InvalidNameException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.util.*;
 
 @Service
 public class WebHookService {
-    private static final String accessToken = "e48p52d7sh91fg6os0t8b8lxf2";
-    private static final long inputSheetId = 1062229786290052L;
-    private static final long fileNameColumnId = 7925470170769284L;
-    private final long templateFolderId = 3998895001888644L;
+
+    private static final String accessToken = "myl8v8t7nn72rurogq9teo7jne";
+    private static final long inputSheetId = 8036104550016900L;
+
+    private final long templateFolderId = 4042879761966980L;
+    private final long jobNumberColumnId = 6784391581067140L;
+    private final long labelColumnId = 3406691860539268L;
+    private final long projectNameColumnId = 591942093432708L;
+
+    private final long maedchenFilmWorkSpaceId = 6383315788818308L;
+    private final long elevenWorkSpaceId = 6224986114418564L;
 
     private static final String HMAC_SHA256_ALGORITHM="HmacSHA256";
     private static final int HMAC_RADIX=16;
     private static final String sharedSecret="55o5ouq4hpqwvf4j5upny871w4";
 
     private static Sheet savedSheet;
-    private static Set<String> fileNames = new HashSet<>();
+    private static List<Row> newRows = new ArrayList<>();
 
     private static Smartsheet smartsheet = new SmartsheetBuilder()
             .setAccessToken(accessToken)
@@ -40,41 +47,46 @@ public class WebHookService {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-        System.out.println("Loaded " + savedSheet.getRows().size() + " rows from sheet: " + savedSheet.getName());
+        System.out.println(savedSheet.getRows().size() + " Zeilen aus der Datei " + savedSheet.getName() + " geladen.");
     }
 
     public void updateSheets() {
         try {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
-            System.out.println("Loaded " + inputSheet.getRows().size() + " rows from sheet: " + inputSheet.getName());
+            System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
             List<Sheet> templates = smartsheet.folderResources()
                     .getFolder(templateFolderId, null)
                     .getSheets();
 
+            double previousLatestJobNumber = getHighestJobNumber(savedSheet);
+
             for (Row row: inputSheet.getRows()){
-                Cell fileNameCell = getFileNameCell(row);
-                if (Objects.nonNull(fileNameCell))
-                    fileNames.add(fileNameCell.getDisplayValue());
+                Cell jobNumberCell = getRelevantCell(row, jobNumberColumnId);
+                if (Objects.nonNull(jobNumberCell) && (double) jobNumberCell.getValue() > previousLatestJobNumber)
+                    newRows.add(row);
             }
 
-            for (Row row: savedSheet.getRows()){
-                Cell fileNameCell = getFileNameCell(row);
-                if (Objects.nonNull(fileNameCell) && fileNames.contains(fileNameCell.getDisplayValue())) {
-                    fileNames.remove(fileNameCell.getDisplayValue());
-                }
-            }
+            for (Row row: newRows) {
+                String jobNumber = getRelevantCell(row, jobNumberColumnId).getDisplayValue();
+                String projectName = getRelevantCell(row, projectNameColumnId).getDisplayValue();
+                long workspaceId;
 
-            int projectCounter = 1;
-            for (String project: fileNames) {
-                Folder targetFolder = smartsheet.homeResources().folderResources()
-                        .createFolder(new Folder().setName(project));
+                if (getRelevantCell(row, labelColumnId).getValue().equals("Mädchenfilm")) {
+                    workspaceId = maedchenFilmWorkSpaceId;
+                } else if (getRelevantCell(row, labelColumnId).getValue().equals("Eleven")){
+                    workspaceId = elevenWorkSpaceId;
+                } else throw new InvalidNameException("Das Label ist weder \"Mädchenfilm\" noch \"Eleven\"");
+
+                Folder targetFolder = smartsheet.workspaceResources().folderResources()
+                        .createFolder(workspaceId, new Folder().setName(jobNumber + "_" + projectName));
 
                 for (Sheet template : templates) {
                     Sheet sheetParameters = new Sheet();
                     sheetParameters.setFromId(template.getId());
-                    sheetParameters.setName(project + projectCounter);
-                    projectCounter += 1;
+                    sheetParameters.setName(template.getName()
+                            .replace("00000", jobNumber)
+                            .replace("Projekte", projectName));
 
                     smartsheet.sheetResources().createSheetInFolderFromTemplate(
                             targetFolder.getId(),
@@ -86,7 +98,6 @@ public class WebHookService {
                                     SheetTemplateInclusion.FORMS)
                     );
                 }
-                projectCounter = 1;
             }
             savedSheet = inputSheet;
 
@@ -96,10 +107,22 @@ public class WebHookService {
         }
     }
 
-    private Cell getFileNameCell (Row row){
+    private double getHighestJobNumber(Sheet sheet){
+        double highestValue = 0d;
+        for (Row row: sheet.getRows()){
+            Cell jobNumberCell = getRelevantCell(row, jobNumberColumnId);
+            if (jobNumberCell != null) {
+                double jobNumber = (double) jobNumberCell.getValue();
+                if (jobNumber > highestValue)
+                    highestValue = jobNumber;
+            }
+        }
+        return highestValue;
+    }
+
+    private Cell getRelevantCell(Row row, long id){
         return row.getCells().stream()
-                .filter(cell -> fileNameColumnId == cell.getColumnId())
-                .filter(cell -> StringUtils.hasText(cell.getDisplayValue()))
+                .filter(cell -> id == cell.getColumnId())
                 .findFirst()
                 .orElse(null);
     }
