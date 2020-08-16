@@ -80,7 +80,7 @@ public class WebHookService {
                     );
                 }
             }
-            ReferenceSheet.sheet = inputSheet;
+            ReferenceSheet.setSheet(inputSheet);
 
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
@@ -91,7 +91,7 @@ public class WebHookService {
     private List<Row> checkForNewRows(Sheet inputSheet) {
         List<Row> newRows = new ArrayList<>();
         try {
-            double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.sheet);
+            double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.getSheet());
 
             for (Row row : inputSheet.getRows()) {
                 Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());

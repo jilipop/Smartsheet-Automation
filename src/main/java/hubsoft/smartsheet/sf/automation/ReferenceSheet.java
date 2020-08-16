@@ -17,7 +17,7 @@ public class ReferenceSheet implements CommandLineRunner{
     private final Constants constants;
     private final Smartsheet smartsheet;
 
-    public static Sheet sheet;
+    private static Sheet sheet;
 
     @Autowired
     public ReferenceSheet(Constants constants) {
@@ -40,5 +40,13 @@ public class ReferenceSheet implements CommandLineRunner{
             System.out.println(e.getMessage());
             System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht gespeichert werden.");
         }
+    }
+
+    public static Sheet getSheet() {
+        return sheet;
+    }
+
+    public static void setSheet(Sheet sheet) {
+        ReferenceSheet.sheet = sheet;
     }
 }
