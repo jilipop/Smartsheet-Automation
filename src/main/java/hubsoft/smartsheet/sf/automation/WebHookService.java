@@ -46,16 +46,26 @@ public class WebHookService {
             }
 
             for (Row row: newRows) {
-                String jobNumber = getRelevantCell(row, constants.getJobNumberColumnId()).getDisplayValue();
-                String projectName = getRelevantCell(row, constants.getProjectNameColumnId()).getDisplayValue();
+                Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
+                Cell projectNameCell = getRelevantCell(row, constants.getProjectNameColumnId());
+                Cell labelCell = getRelevantCell(row, constants.getLabelColumnId());
 
-                if (!StringUtils.hasText(projectName))
+                String jobNumber;
+                if (jobNumberCell == null || !StringUtils.hasText(jobNumberCell.getDisplayValue()))
+                    throw new InvalidParameterException("Breche ab, weil keine Jobnummer vergeben wurde.");
+                else
+                    jobNumber = jobNumberCell.getDisplayValue();
+
+                String projectName;
+                if (projectNameCell == null || !StringUtils.hasText(projectNameCell.getDisplayValue()))
                     throw new InvalidParameterException("Breche ab, weil kein Projektname eingegeben wurde.");
+                else
+                    projectName = projectNameCell.getDisplayValue();
 
                 long workspaceId;
-                if (getRelevantCell(row, constants.getLabelColumnId()).getValue().equals("Mädchenfilm")) {
+                if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
                     workspaceId = constants.getMaedchenFilmWorkSpaceId();
-                } else if (getRelevantCell(row, constants.getLabelColumnId()).getValue().equals("Eleven")){
+                } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
                     workspaceId = constants.getElevenWorkSpaceId();
                 } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
 
