@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import com.smartsheet.api.Smartsheet;
 import com.smartsheet.api.SmartsheetBuilder;

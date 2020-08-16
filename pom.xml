@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>hubsoft</groupId>
-	<artifactId>smartsheet.test</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>smartsheet.test</name>
-	<description>Testing the SmartSheet SDK</description>
+	<artifactId>smartsheet.sf.automation</artifactId>
+	<version>0.0.2</version>
+	<name>smartsheet.sf.automation</name>
+	<description>Smartsheet automation</description>
 
 	<properties>
 		<java.version>13</java.version>

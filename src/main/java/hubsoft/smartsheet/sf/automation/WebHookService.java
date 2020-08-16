@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import com.smartsheet.api.Smartsheet;
 import com.smartsheet.api.SmartsheetBuilder;
@@ -20,13 +20,8 @@ import java.util.*;
 @Service
 public class WebHookService {
 
-    private final String HMAC_SHA256_ALGORITHM="HmacSHA256";
-    private final int HMAC_RADIX=16;
-
     private final Constants constants;
     private final Smartsheet smartsheet;
-
-    private final List<Row> newRows = new ArrayList<>();
 
     @Autowired
     public WebHookService(Constants constants) {
@@ -41,19 +36,13 @@ public class WebHookService {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(constants.getInputSheetId(), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
-            double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.sheet);
-
-            for (Row row: inputSheet.getRows()){
-                Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
-                if (Objects.nonNull(jobNumberCell) && (double) jobNumberCell.getValue() > previousLatestJobNumber)
-                    newRows.add(row);
-            }
-
+            List<Row> newRows = checkForNewRows(inputSheet);
             List<Sheet> templates = Collections.emptyList();
+
             if (newRows.size() > 0) {
-                templates = smartsheet.folderResources()
-                        .getFolder(constants.getTemplateFolderId(), null)
-                        .getSheets();
+            templates = smartsheet.folderResources()
+                    .getFolder(constants.getTemplateFolderId(), null)
+                    .getSheets();
             }
 
             for (Row row: newRows) {
@@ -73,7 +62,7 @@ public class WebHookService {
                 Folder targetFolder = smartsheet.workspaceResources().folderResources()
                         .createFolder(workspaceId, new Folder().setName(jobNumber + "_" + projectName));
 
-                for (Sheet template : templates) {
+                for (Sheet template: templates) {
                     Sheet sheetParameters = new Sheet();
                     sheetParameters.setFromId(template.getId());
                     sheetParameters.setName(template.getName()
@@ -98,6 +87,24 @@ public class WebHookService {
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
             ex.printStackTrace();
         }
+    }
+
+    private List<Row> checkForNewRows(Sheet inputSheet) {
+        List<Row> newRows = new ArrayList<>();
+        try {
+            double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.sheet);
+
+            for (Row row : inputSheet.getRows()) {
+                Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
+                if (Objects.nonNull(jobNumberCell) && (double) jobNumberCell.getValue() > previousLatestJobNumber)
+                    newRows.add(row);
+            }
+        } catch (Exception ex) {
+            System.out.println("Fehler : " + ex.getMessage());
+            System.out.println("Die Prüfung auf neue Projekteinträge ist gescheitert.");
+            ex.printStackTrace();
+        }
+        return newRows;
     }
 
     private double getHighestJobNumber(Sheet sheet){
@@ -131,6 +138,9 @@ public class WebHookService {
     }
 
     private String calculateHmac(String sharedSecret, String callbackBody)throws GeneralSecurityException {
+        String HMAC_SHA256_ALGORITHM = "HmacSHA256";
+        int HMAC_RADIX = 16;
+
         Mac mac = Mac.getInstance(HMAC_SHA256_ALGORITHM);
         mac.init( new SecretKeySpec(sharedSecret.getBytes(), HMAC_SHA256_ALGORITHM));
 

@@ -1,11 +1,11 @@
-package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hubsoft.smartsheet.test.models.EventCallback;
-import hubsoft.smartsheet.test.models.HookResponseBody;
-import hubsoft.smartsheet.test.models.StatusChangeCallback;
-import hubsoft.smartsheet.test.models.VerificationRequest;
+import hubsoft.smartsheet.sf.automation.models.EventCallback;
+import hubsoft.smartsheet.sf.automation.models.HookResponseBody;
+import hubsoft.smartsheet.sf.automation.models.StatusChangeCallback;
+import hubsoft.smartsheet.sf.automation.models.VerificationRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +34,7 @@ public class WebHookController {
         if (challengeHeader == null){
             if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString))
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            else if (requestBodyString.contains("\"events\":")){
+            else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
                 try {
                     EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
                 } catch (JsonProcessingException e) {

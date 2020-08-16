@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.test.models;
+package hubsoft.smartsheet.sf.automation.models;
 
 public class VerificationRequest {
     public String challenge;

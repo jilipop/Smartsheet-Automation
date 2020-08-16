@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

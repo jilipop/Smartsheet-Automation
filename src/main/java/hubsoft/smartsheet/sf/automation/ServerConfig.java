@@ -1,7 +1,6 @@
-/*package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import org.apache.catalina.Context;
-import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
@@ -14,7 +13,7 @@ public class ServerConfig {
 
     @Bean
     public ServletWebServerFactory servletContainer() {
-        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
+        return new TomcatServletWebServerFactory() {
             @Override
             protected void postProcessContext(Context context) {
                 SecurityConstraint securityConstraint = new SecurityConstraint();
@@ -25,7 +24,5 @@ public class ServerConfig {
                 context.addConstraint(securityConstraint);
             }
         };
-        return tomcat;
     }
 }
-*/

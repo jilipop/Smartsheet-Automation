@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.test;
+package hubsoft.smartsheet.sf.automation;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
