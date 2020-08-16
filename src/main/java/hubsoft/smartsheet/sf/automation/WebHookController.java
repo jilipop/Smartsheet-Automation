@@ -37,6 +37,8 @@ public class WebHookController {
             else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
                 try {
                     EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
+                    System.out.println("Smartsmeet hat ein Update gemeldet.");
+                    eventCallback.getEvents().forEach(event -> System.out.println(event.getEventType()));
                 } catch (JsonProcessingException e) {
                     System.out.println(e.getMessage());
                 }
@@ -44,6 +46,7 @@ public class WebHookController {
             } else {
                 try {
                     StatusChangeCallback statusChangeCallback = mapper.readValue(requestBodyString, StatusChangeCallback.class);
+                    System.out.println("Smartsheet hat eine Änderung des Webhook-Status gesendet: " + statusChangeCallback.getNewWebhookStatus());
                 } catch (JsonProcessingException e) {
                     System.out.println(e.getMessage());
                 }
@@ -56,6 +59,7 @@ public class WebHookController {
             try {
                 VerificationRequest request = mapper.readValue(requestBodyString, VerificationRequest.class);
                 HookResponseBody hookResponseBody = new HookResponseBody(request.getChallenge());
+                System.out.println("Smartsheet hat eine Verifikations-Anfrage geschickt: " + request.getChallenge());
                 return new ResponseEntity<>(mapper.writeValueAsString(hookResponseBody), headers, HttpStatus.OK);
             } catch (JsonProcessingException e) {
                 System.out.println(e.getMessage());

@@ -85,7 +85,6 @@ public class WebHookService {
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
-            ex.printStackTrace();
         }
     }
 
@@ -102,7 +101,6 @@ public class WebHookService {
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Prüfung auf neue Projekteinträge ist gescheitert.");
-            ex.printStackTrace();
         }
         return newRows;
     }

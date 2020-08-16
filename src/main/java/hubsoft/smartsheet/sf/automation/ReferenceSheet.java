@@ -39,7 +39,6 @@ public class ReferenceSheet implements CommandLineRunner{
         } catch (SmartsheetException e) {
             System.out.println(e.getMessage());
             System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht gespeichert werden.");
-            e.printStackTrace();
         }
     }
 }
