@@ -37,8 +37,8 @@ public class WebHookController {
             else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
                 try {
                     EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
-                    System.out.println("Smartsmeet hat ein Update gemeldet.");
-                    eventCallback.getEvents().forEach(event -> System.out.println(event.getEventType()));
+                    System.out.println("Smartsheet hat ein Update gemeldet:");
+                    eventCallback.getEvents().forEach(event -> System.out.println(event.getObjectType() + " " + event.getEventType()));
                 } catch (JsonProcessingException e) {
                     System.out.println(e.getMessage());
                 }
