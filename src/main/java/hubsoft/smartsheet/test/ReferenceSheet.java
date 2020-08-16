@@ -38,7 +38,7 @@ public class ReferenceSheet implements CommandLineRunner{
             System.out.println(sheet.getRows().size() + " Zeilen aus der Datei " + sheet.getName() + " geladen.");
         } catch (SmartsheetException e) {
             System.out.println(e.getMessage());
-            System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht geladen werden.");
+            System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht gespeichert werden.");
             e.printStackTrace();
         }
     }
