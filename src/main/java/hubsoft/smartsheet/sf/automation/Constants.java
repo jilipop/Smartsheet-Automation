@@ -24,8 +24,14 @@ public class Constants {
     @Value("${constants.ids.label-column}")
     private long labelColumnId;
 
+    @Value("${constants.ids.client-column}")
+    private long clientNameColumnId;
+
     @Value("${constants.ids.project-name-column}")
     private long projectNameColumnId;
+
+    @Value("${constants.ids.asp-column}")
+    private long aspColumnId;
 
     @Value("${constants.ids.maedchenfilm-workspace}")
     private long maedchenFilmWorkSpaceId;
@@ -57,8 +63,16 @@ public class Constants {
         return labelColumnId;
     }
 
+    public long getClientNameColumnId() {
+        return clientNameColumnId;
+    }
+
     public long getProjectNameColumnId() {
         return projectNameColumnId;
+    }
+
+    public long getAspColumnId() {
+        return aspColumnId;
     }
 
     public long getMaedchenFilmWorkSpaceId() {
