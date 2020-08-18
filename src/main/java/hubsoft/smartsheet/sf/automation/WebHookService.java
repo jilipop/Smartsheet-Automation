@@ -6,7 +6,6 @@ import com.smartsheet.api.models.*;
 import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
 import com.smartsheet.api.models.enums.ObjectExclusion;
-import com.smartsheet.api.models.enums.SheetTemplateInclusion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -33,7 +32,7 @@ public class WebHookService {
                 .build();
     }
 
-    public void updateSheets() {
+    public void copyAndRenameTemplates() {
         try {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(constants.getInputSheetId(), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
@@ -117,6 +116,7 @@ public class WebHookService {
                     smartsheet.sheetResources().updateSheet(sheetParameters);
                 }
             }
+
             ReferenceSheet.setSheet(inputSheet);
 
         } catch (Exception ex) {

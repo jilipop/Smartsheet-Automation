@@ -42,7 +42,7 @@ public class WebHookController {
                 } catch (JsonProcessingException e) {
                     System.out.println(e.getMessage());
                 }
-                webHookService.updateSheets();
+                webHookService.copyAndRenameTemplates();
             } else {
                 try {
                     StatusChangeCallback statusChangeCallback = mapper.readValue(requestBodyString, StatusChangeCallback.class);
