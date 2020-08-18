@@ -24,7 +24,7 @@ public class Constants {
     @Value("${constants.ids.label-column}")
     private long labelColumnId;
 
-    @Value("${constants.ids.client-column}")
+    @Value("${constants.ids.client-name-column}")
     private long clientNameColumnId;
 
     @Value("${constants.ids.project-name-column}")
