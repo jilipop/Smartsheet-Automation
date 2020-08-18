@@ -38,7 +38,6 @@ public class WebHookService {
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
             List<Row> newRows = checkForNewRows(inputSheet);
-            List<Sheet> templateSheets = Collections.emptyList();
 
             for (Row row: newRows) {
                 Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
@@ -98,6 +97,7 @@ public class WebHookService {
                         null
                 );
 
+                List<Sheet> templateSheets = Collections.emptyList();
                 if (newRows.size() > 0) {
                     templateSheets = smartsheet.folderResources()
                             .getFolder(targetFolder.getId(), null)
