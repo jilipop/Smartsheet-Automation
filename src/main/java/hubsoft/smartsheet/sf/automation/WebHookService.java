@@ -2,6 +2,7 @@ package hubsoft.smartsheet.sf.automation;
 
 import com.smartsheet.api.Smartsheet;
 import com.smartsheet.api.SmartsheetBuilder;
+import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.*;
 import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
@@ -32,7 +33,7 @@ public class WebHookService {
                 .build();
     }
 
-    public void copyAndRenameTemplates() {
+    public void processTemplates() {
         try {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(constants.getInputSheetId(), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
@@ -41,80 +42,24 @@ public class WebHookService {
 
             for (Row row: newRows) {
                 Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
-                Cell labelCell = getRelevantCell(row, constants.getLabelColumnId());
+                String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
+
                 Cell clientNameCell = getRelevantCell(row, constants.getClientNameColumnId());
+                String clientName = checkAndGetCellContent(clientNameCell, "Kundenname");
+
                 Cell projectNameCell = getRelevantCell(row, constants.getProjectNameColumnId());
+                String projectName = checkAndGetCellContent(projectNameCell, "Projektname");
+
                 Cell aspCell = getRelevantCell(row, constants.getAspColumnId());
-
-                String jobNumber;
-                if (jobNumberCell == null || !StringUtils.hasText(jobNumberCell.getDisplayValue()))
-                    throw new InvalidParameterException("Breche ab, weil keine Jobnummer vergeben wurde.");
-                else
-                    jobNumber = jobNumberCell.getDisplayValue();
-
-                long workspaceId;
-                if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
-                    workspaceId = constants.getMaedchenFilmWorkSpaceId();
-                } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
-                    workspaceId = constants.getElevenWorkSpaceId();
-                } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
-
-                String clientName;
-                if (clientNameCell == null || !StringUtils.hasText(clientNameCell.getDisplayValue()))
-                    throw new InvalidParameterException("Breche ab, weil kein Kundenname eingegeben wurde.");
-                else
-                    clientName = clientNameCell.getDisplayValue();
-
-                String projectName;
-                if (projectNameCell == null || !StringUtils.hasText(projectNameCell.getDisplayValue()))
-                    throw new InvalidParameterException("Breche ab, weil kein Projektname eingegeben wurde.");
-                else
-                    projectName = projectNameCell.getDisplayValue();
-
-                String asp;
+                String asp = "";
                 if (aspCell != null)
                     asp = aspCell.getDisplayValue();
 
                 String combinedName = combineName(clientName, projectName);
 
-                ContainerDestination destination = new ContainerDestination()
-                        .setDestinationType(DestinationType.WORKSPACE)
-                        .setDestinationId(workspaceId)
-                        .setNewName(jobNumber + "_" + combinedName);
-
-                Folder targetFolder = smartsheet.folderResources().copyFolder(
-                        constants.getTemplateFolderId(),
-                        destination,
-                        EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
-                                FolderCopyInclusion.CELLLINKS,
-                                FolderCopyInclusion.DATA,
-                                FolderCopyInclusion.DISCUSSIONS,
-                                FolderCopyInclusion.FILTERS,
-                                FolderCopyInclusion.FORMS,
-                                FolderCopyInclusion.RULERECIPIENTS,
-                                FolderCopyInclusion.RULES,
-                                FolderCopyInclusion.SHARES),
-                        null
-                );
-
-                List<Sheet> templateSheets = Collections.emptyList();
-                if (newRows.size() > 0) {
-                    templateSheets = smartsheet.folderResources()
-                            .getFolder(targetFolder.getId(), null)
-                            .getSheets();
-                }
-
-                for (Sheet template: templateSheets) {
-                    Sheet sheetParameters = new Sheet();
-                    sheetParameters
-                            .setName(template.getName()
-                                            .replace("00000", jobNumber)
-                                            .replace("Projekte", combinedName)
-                            )
-                            .setId(template.getId());
-
-                    smartsheet.sheetResources().updateSheet(sheetParameters);
-                }
+                Folder targetFolder = copyFolder(row, jobNumber, combinedName);
+                List<Sheet> targetSheets = renameSheets(targetFolder, jobNumber, combinedName);
+                insertDataIntoSheets(targetSheets, projectName, asp);
             }
 
             ReferenceSheet.setSheet(inputSheet);
@@ -162,6 +107,13 @@ public class WebHookService {
                 .orElse(null);
     }
 
+    private String checkAndGetCellContent(Cell cell, String description){
+        if (cell == null || !StringUtils.hasText(cell.getDisplayValue()))
+            throw new InvalidParameterException("Breche ab, weil folgender Eintrag in der Tabelle fehlt: " + description);
+        else
+            return cell.getDisplayValue();
+    }
+
     String combineName(String clientName, String projectName){
         final int maxFileNameLengthImposedBySmartsheet = 50;
         final int longestTemplateNameFixedChars = 25; //inklusive "_" zwischen Kundenname und Projektname
@@ -175,6 +127,83 @@ public class WebHookService {
             projectName = projectName.substring(0, remainingLength - clientName.length() -1);
 
         return clientName + "_" + projectName;
+    }
+
+    private Folder copyFolder(Row row, String jobNumber, String combinedName) throws InvalidNameException, SmartsheetException {
+        ContainerDestination destination = new ContainerDestination()
+                .setDestinationType(DestinationType.WORKSPACE)
+                .setDestinationId(getTargetWorkSpaceId(row))
+                .setNewName(jobNumber + "_" + combinedName);
+
+        return smartsheet.folderResources().copyFolder(
+                constants.getTemplateFolderId(),
+                destination,
+                EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
+                        FolderCopyInclusion.CELLLINKS,
+                        FolderCopyInclusion.DATA,
+                        FolderCopyInclusion.DISCUSSIONS,
+                        FolderCopyInclusion.FILTERS,
+                        FolderCopyInclusion.FORMS,
+                        FolderCopyInclusion.RULERECIPIENTS,
+                        FolderCopyInclusion.RULES,
+                        FolderCopyInclusion.SHARES),
+                null
+        );
+    }
+
+    private Long getTargetWorkSpaceId(Row row) throws InvalidNameException {
+        Cell labelCell = getRelevantCell(row, constants.getLabelColumnId());
+
+        if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
+            return constants.getMaedchenFilmWorkSpaceId();
+        } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
+            return constants.getElevenWorkSpaceId();
+        } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
+    }
+
+    private List<Sheet> renameSheets(Folder targetFolder, String jobNumber, String combinedName) throws SmartsheetException {
+        List<Sheet> templateSheets = smartsheet.folderResources()
+                .getFolder(targetFolder.getId(), null)
+                .getSheets();
+
+        for (Sheet template: templateSheets) {
+            Sheet sheetParameters = new Sheet();
+            sheetParameters
+                    .setName(template.getName()
+                            .replace("00000", jobNumber)
+                            .replace("Projekte", combinedName)
+                    )
+                    .setId(template.getId());
+
+            smartsheet.sheetResources().updateSheet(sheetParameters);
+        }
+        return templateSheets;
+    }
+
+    public void insertDataIntoSheets(List<Sheet> targetSheets, String projectName, String asp) {
+        try {
+            Sheet finanzen = targetSheets.stream()
+                    .filter(sheet -> sheet.getName().contains("Finanzen"))
+                    .findFirst()
+                    .orElse(null);
+
+            if (finanzen != null) {
+                Row firstRow = finanzen.getRows().get(1);
+                Cell projectNameCell = firstRow.getCells().get(1).setValue(projectName);
+                Cell aspCell = firstRow.getCells().get(2).setValue(asp);
+
+                Row newRow = new Row();
+                newRow.setId(firstRow.getId());
+                newRow.setCells(List.of(projectNameCell, aspCell));
+
+                smartsheet.sheetResources().rowResources().updateRows(
+                        finanzen.getId(),
+                        List.of(newRow)
+                );
+            }
+        } catch (Exception ex) {
+            System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
+        }
     }
 
     public boolean authenticateCallBack(String hmacHeader, String requestBody) {
