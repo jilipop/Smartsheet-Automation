@@ -59,7 +59,13 @@ public class WebHookService {
 
                 Folder targetFolder = copyFolder(row, jobNumber, combinedName);
                 List<Sheet> targetSheets = renameSheets(targetFolder, jobNumber, combinedName);
-                insertDataIntoSheets(targetSheets, projectName, asp);
+
+                Sheet sheetToUpdate = targetSheets.stream()
+                        .filter(sheet -> sheet.getName().contains("Finanzen"))
+                        .findFirst()
+                        .orElse(null);
+
+                insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
             }
 
             ReferenceSheet.setSheet(inputSheet);
@@ -108,7 +114,7 @@ public class WebHookService {
                 .orElse(null);
     }
 
-    private Cell getCellByColumnName(Sheet sheet, Row row, String name){
+    private Cell getCellByColumnTitle(Sheet sheet, Row row, String name){
         Column column = sheet.getColumns().stream()
                 .filter(col -> name.equals(col.getTitle()))
                 .findFirst()
@@ -193,16 +199,11 @@ public class WebHookService {
         return templateSheets;
     }
 
-    public void insertDataIntoSheets(List<Sheet> targetSheets, String projectName, String asp) {
+    public void insertDataIntoFirstRow(Sheet sheetToUpdate, Map<String, String> cellData) {
         try {
-            Sheet finanzen = targetSheets.stream()
-                    .filter(sheet -> sheet.getName().contains("Finanzen"))
-                    .findFirst()
-                    .orElse(null);
-
-            if (finanzen != null) {
-                finanzen = smartsheet.sheetResources().getSheet(
-                        finanzen.getId(),
+            if (sheetToUpdate != null) {
+                sheetToUpdate = smartsheet.sheetResources().getSheet(
+                        sheetToUpdate.getId(),
                         null,
                         null,
                         null,
@@ -211,25 +212,23 @@ public class WebHookService {
                         null,
                         null
                 );
-                Row firstRow = finanzen.getRows().get(0);
+                Row rowToUpdate = sheetToUpdate.getRows().get(0);
                 List<Cell> cellsToUpdate = new ArrayList<>();
 
-                Cell projectNameCell = getCellByColumnName(finanzen, firstRow, "Position");
-                if (projectNameCell != null) {
-                    projectNameCell.setValue(projectName);
-                    cellsToUpdate.add(projectNameCell);
-                }
-                Cell aspCell = getCellByColumnName(finanzen, firstRow, "Empfänger");
-                if (aspCell != null) {
-                    aspCell.setValue(asp);
-                    cellsToUpdate.add(aspCell);
-                }
+                Sheet finalSheetToUpdate = sheetToUpdate;
+                cellData.forEach((columnTitle, value) -> {
+                    Cell targetCell = getCellByColumnTitle(finalSheetToUpdate, rowToUpdate, columnTitle);
+                    if (targetCell != null) {
+                        targetCell.setValue(value);
+                        cellsToUpdate.add(targetCell);
+                    }
+                });
                 Row newRow = new Row();
-                newRow.setId(firstRow.getId());
+                newRow.setId(rowToUpdate.getId());
                 newRow.setCells(cellsToUpdate);
 
                 smartsheet.sheetResources().rowResources().updateRows(
-                        finanzen.getId(),
+                        finalSheetToUpdate.getId(),
                         List.of(newRow)
                 );
             }
