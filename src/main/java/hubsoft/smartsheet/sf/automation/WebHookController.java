@@ -32,9 +32,10 @@ public class WebHookController {
         final String requestBodyString = httpEntity.getBody();
 
         if (challengeHeader == null){
-            if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString))
+            if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString)) {
+                System.out.println("Ein Callback mit falscher Authentifizierung wurde abgelehnt.");
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
+            } else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
                 try {
                     EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
                     System.out.println("Smartsheet hat Updates gemeldet:");
