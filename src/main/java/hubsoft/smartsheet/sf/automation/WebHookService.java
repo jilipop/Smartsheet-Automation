@@ -212,25 +212,30 @@ public class WebHookService {
                         null
                 );
                 Row firstRow = finanzen.getRows().get(0);
-                Cell projectNameCell = getCellByColumnName(finanzen, firstRow, "Position");
-                if (projectNameCell != null)
-                    projectNameCell.setValue(projectName);
-                Cell aspCell = getCellByColumnName(finanzen, firstRow, "Empfänger");
-                if (aspCell != null)
-                    aspCell.setValue(asp);
+                List<Cell> cellsToUpdate = new ArrayList<>();
 
+                Cell projectNameCell = getCellByColumnName(finanzen, firstRow, "Position");
+                if (projectNameCell != null) {
+                    projectNameCell.setValue(projectName);
+                    cellsToUpdate.add(projectNameCell);
+                }
+                Cell aspCell = getCellByColumnName(finanzen, firstRow, "Empfänger");
+                if (aspCell != null) {
+                    aspCell.setValue(asp);
+                    cellsToUpdate.add(aspCell);
+                }
                 Row newRow = new Row();
                 newRow.setId(firstRow.getId());
-                newRow.setCells(List.of(projectNameCell, aspCell));
+                newRow.setCells(cellsToUpdate);
 
-                smartsheet.sheetResources().rowResources().updateRowsAllowPartialSuccess(
+                smartsheet.sheetResources().rowResources().updateRows(
                         finanzen.getId(),
                         List.of(newRow)
                 );
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            System.out.println("Projektname und/oder Empfänger konnten nicht eingetragen werden.");
+            System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
         }
     }
 
