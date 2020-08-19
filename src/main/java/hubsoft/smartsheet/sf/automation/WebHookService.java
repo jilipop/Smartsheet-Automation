@@ -41,16 +41,16 @@ public class WebHookService {
             List<Row> newRows = checkForNewRows(inputSheet);
 
             for (Row row: newRows) {
-                Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
+                Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
                 String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
 
-                Cell clientNameCell = getRelevantCell(row, constants.getClientNameColumnId());
+                Cell clientNameCell = getCellByColumnId(row, constants.getClientNameColumnId());
                 String clientName = checkAndGetCellContent(clientNameCell, "Kundenname");
 
-                Cell projectNameCell = getRelevantCell(row, constants.getProjectNameColumnId());
+                Cell projectNameCell = getCellByColumnId(row, constants.getProjectNameColumnId());
                 String projectName = checkAndGetCellContent(projectNameCell, "Projektname");
 
-                Cell aspCell = getRelevantCell(row, constants.getAspColumnId());
+                Cell aspCell = getCellByColumnId(row, constants.getAspColumnId());
                 String asp = "";
                 if (aspCell != null)
                     asp = aspCell.getDisplayValue();
@@ -66,6 +66,7 @@ public class WebHookService {
 
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
+            ex.printStackTrace();
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
         }
     }
@@ -76,7 +77,7 @@ public class WebHookService {
             double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.getSheet());
 
             for (Row row : inputSheet.getRows()) {
-                Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
+                Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
                 if (Objects.nonNull(jobNumberCell) && (double) jobNumberCell.getValue() > previousLatestJobNumber)
                     newRows.add(row);
             }
@@ -90,7 +91,7 @@ public class WebHookService {
     private double getHighestJobNumber(Sheet sheet){
         double highestValue = 0d;
         for (Row row: sheet.getRows()){
-            Cell jobNumberCell = getRelevantCell(row, constants.getJobNumberColumnId());
+            Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
             if (jobNumberCell != null) {
                 double jobNumber = (double) jobNumberCell.getValue();
                 if (jobNumber > highestValue)
@@ -100,11 +101,23 @@ public class WebHookService {
         return highestValue;
     }
 
-    private Cell getRelevantCell(Row row, long id){
+    private Cell getCellByColumnId(Row row, long id){
         return row.getCells().stream()
                 .filter(cell -> id == cell.getColumnId())
                 .findFirst()
                 .orElse(null);
+    }
+
+    private Cell getCellByColumnName(Sheet sheet, Row row, String name){
+        Column column = sheet.getColumns().stream()
+                .filter(col -> name.equals(col.getTitle()))
+                .findFirst()
+                .orElse(null);
+
+        if (column == null)
+            return null;
+        else
+            return getCellByColumnId(row, column.getId());
     }
 
     private String checkAndGetCellContent(Cell cell, String description){
@@ -116,11 +129,11 @@ public class WebHookService {
 
     String combineName(String clientName, String projectName){
         final int maxFileNameLengthImposedBySmartsheet = 50;
-        final int longestTemplateNameFixedChars = 25; //inklusive "_" zwischen Kundenname und Projektname
+        final int longestTemplateNameFixedChars = 23; //inklusive "_" zwischen Kundenname und Projektname
         final int remainingLength = maxFileNameLengthImposedBySmartsheet - longestTemplateNameFixedChars;
         final int minimumProjectNameLength = 4;
 
-        if (clientName.length() > remainingLength)
+        if (clientName.length() > remainingLength - minimumProjectNameLength)
             clientName = clientName.substring(0, remainingLength - minimumProjectNameLength -1);
 
         if (clientName.length() + projectName.length() > remainingLength)
@@ -152,7 +165,7 @@ public class WebHookService {
     }
 
     private Long getTargetWorkSpaceId(Row row) throws InvalidNameException {
-        Cell labelCell = getRelevantCell(row, constants.getLabelColumnId());
+        Cell labelCell = getCellByColumnId(row, constants.getLabelColumnId());
 
         if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
             return constants.getMaedchenFilmWorkSpaceId();
@@ -188,9 +201,23 @@ public class WebHookService {
                     .orElse(null);
 
             if (finanzen != null) {
-                Row firstRow = finanzen.getRows().get(1);
-                Cell projectNameCell = firstRow.getCells().get(1).setValue(projectName);
-                Cell aspCell = firstRow.getCells().get(2).setValue(asp);
+                finanzen = smartsheet.sheetResources().getSheet(
+                        finanzen.getId(),
+                        null,
+                        null,
+                        null,
+                        Set.of(1),
+                        null,
+                        null,
+                        null
+                );
+                Row firstRow = finanzen.getRows().get(0);
+                Cell projectNameCell = getCellByColumnName(finanzen, firstRow, "Position");
+                if (projectNameCell != null)
+                    projectNameCell.setValue(projectName);
+                Cell aspCell = getCellByColumnName(finanzen, firstRow, "Empfänger");
+                if (aspCell != null)
+                    aspCell.setValue(asp);
 
                 Row newRow = new Row();
                 newRow.setId(firstRow.getId());
@@ -202,6 +229,7 @@ public class WebHookService {
                 );
             }
         } catch (Exception ex) {
+            System.out.println(ex.getMessage());
             System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
         }
     }
