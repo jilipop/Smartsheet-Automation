@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>hubsoft</groupId>
-	<artifactId>smartsheet.sf.automation</artifactId>
+	<artifactId>sf.motion.smartsheet.automation</artifactId>
 	<version>0.0.2</version>
-	<name>smartsheet.sf.automation</name>
-	<description>Smartsheet automation</description>
+	<name>SF-Motion-Smartsheet-Automation</name>
+	<description>Smartsheet automation for SF Motion</description>
 
 	<properties>
 		<java.version>13</java.version>
