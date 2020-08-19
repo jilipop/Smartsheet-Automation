@@ -230,7 +230,7 @@ public class WebHookService {
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
+            System.out.println("Projektname und/oder Empfänger konnten nicht eingetragen werden.");
         }
     }
 
