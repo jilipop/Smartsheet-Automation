@@ -223,7 +223,7 @@ public class WebHookService {
                 newRow.setId(firstRow.getId());
                 newRow.setCells(List.of(projectNameCell, aspCell));
 
-                smartsheet.sheetResources().rowResources().updateRows(
+                smartsheet.sheetResources().rowResources().updateRowsAllowPartialSuccess(
                         finanzen.getId(),
                         List.of(newRow)
                 );
