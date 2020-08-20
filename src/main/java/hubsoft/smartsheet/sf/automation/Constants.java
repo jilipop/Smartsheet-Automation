@@ -53,7 +53,20 @@ public class Constants {
 
     private final Map<String, Long> ids = new HashMap<>();
 
-    public Constants() {
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public String getSharedSecret() {
+        return sharedSecret;
+    }
+
+    public long getInputSheetId() {
+
+        return inputSheetId;
+    }
+
+    public Map<String, Long> getIds() {
         ids.put("inputSheet", inputSheetId);
         ids.put("templateFolder", templateFolderId);
         ids.put("jobNumberColumn", jobNumberColumnId);
@@ -66,21 +79,6 @@ public class Constants {
         ids.put("slColumn", slColumnId);
         ids.put("maedchenFilmWorkSpace", maedchenFilmWorkSpaceId);
         ids.put("elevenWorkSpace", elevenWorkSpaceId);
-    }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public String getSharedSecret() {
-        return sharedSecret;
-    }
-
-    public long getInputSheetId() {
-        return inputSheetId;
-    }
-
-    public Map<String, Long> getIds() {
         return ids;
     }
 }
