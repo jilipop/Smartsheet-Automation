@@ -21,6 +21,12 @@ public class Constants {
     @Value("${constants.ids.template-folder}")
     private long templateFolderId;
 
+    @Value("${constants.ids.timing-sheet}")
+    private long timingTemplateId;
+
+    @Value("${constants.ids.shotlist-sheet}")
+    private long shotlistTemplateId;
+
     @Value("${constants.ids.job-number-column}")
     private long jobNumberColumnId;
 
@@ -69,6 +75,8 @@ public class Constants {
     public Map<String, Long> getIds() {
         ids.put("inputSheet", inputSheetId);
         ids.put("templateFolder", templateFolderId);
+        ids.put("timingTemplate", timingTemplateId);
+        ids.put("shotlistTemplate", shotlistTemplateId);
         ids.put("jobNumberColumn", jobNumberColumnId);
         ids.put("labelColumn", labelColumnId);
         ids.put("clientNameColumn", clientNameColumnId);

@@ -7,6 +7,7 @@ import com.smartsheet.api.models.*;
 import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
 import com.smartsheet.api.models.enums.ObjectExclusion;
+import com.smartsheet.api.models.enums.SheetTemplateInclusion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -22,11 +23,13 @@ import java.util.*;
 @Service
 public class WebHookService {
 
+    private final Constants constants;
     private final Map<String, Long> ids;
     private final Smartsheet smartsheet;
 
     @Autowired
     public WebHookService(Constants constants) {
+        this.constants = constants;
         ids = constants.getIds();
         smartsheet = new SmartsheetBuilder()
                 .setAccessToken(constants.getAccessToken())
@@ -38,9 +41,9 @@ public class WebHookService {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(ids.get("inputSheet"), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
-            List<Row> newRows = checkForRowsToProcess(inputSheet);
+            Set<Row> rowsToProcess = checkForRowsToProcess(inputSheet);
 
-            for (Row row: newRows) {
+            for (Row row: rowsToProcess) {
                 Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
                 String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
 
@@ -55,20 +58,47 @@ public class WebHookService {
                 if (aspCell != null && StringUtils.hasText(aspCell.getDisplayValue()))
                     asp = aspCell.getDisplayValue();
 
-                String combinedName = combineName(clientName, projectName);
+                String combinedName = combineName(jobNumber, clientName, projectName);
 
-                Folder targetFolder = copyFolder(row, jobNumber, combinedName);
-                List<Sheet> targetSheets = renameSheets(targetFolder, jobNumber, combinedName);
+                long targetFolderId;
+                if (newCheckmark(row, "kvColumn")) {
+                    targetFolderId = copyFolder(row, combinedName).getId();
+                } else {
+                    Long id = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
+                    if (id == null) {
+                        Folder folderParameters = new Folder();
+                        folderParameters.setName(combinedName);
+
+                        targetFolderId = smartsheet.workspaceResources().folderResources()
+                                .createFolder(getTargetWorkSpaceId(row), folderParameters)
+                                .getId();
+                    } else {
+                        targetFolderId = id;
+                    }
+                }
+
+                Cell timingCell = getCellByColumnId(row, ids.get("tColumn"));
+                if (Objects.nonNull(timingCell) && timingCell.getValue().equals(true)) {
+                    copySheetToFolder(ids.get("timingTemplate"), targetFolderId, combinedName, "Timing");
+                }
+                Cell shotListCell = getCellByColumnId(row, ids.get("slColumn"));
+                if (Objects.nonNull(shotListCell) && shotListCell.getValue().equals(true)) {
+                    copySheetToFolder(ids.get("shotlistTemplate"), targetFolderId, combinedName, "Shotlist");
+                }
+
+                List<Sheet> targetSheets = renameSheets(targetFolderId, combinedName);
 
                 Sheet sheetToUpdate = targetSheets.stream()
                         .filter(sheet -> sheet.getName().contains("Finanzen"))
                         .findFirst()
                         .orElse(null);
 
-                insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
+                if (sheetToUpdate != null)
+                    insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
             }
 
             ReferenceSheet.setSheet(inputSheet);
+            System.out.println("Aktualisierung abgeschlossen.");
 
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
@@ -77,29 +107,38 @@ public class WebHookService {
         }
     }
 
-    private List<Row> checkForRowsToProcess(Sheet inputSheet) {
-        List<Row> rowsToProcess = new ArrayList<>();
+    private Set<Row> checkForRowsToProcess(Sheet inputSheet) {
+        Set<Row> rowsToProcess = new HashSet<>();
         try {
             for (Row row : inputSheet.getRows()) {
-                Cell kvCell = getCellByColumnId(row, ids.get("kvColumn"));
-                if (Objects.nonNull(kvCell) && kvCell.getValue().equals(true)) {
-                    Cell refSheetKvCell = getCellByColumnId(sameRowInReferenceSheet(row), ids.get("kvColumn"));
-                    if (!(Objects.nonNull(refSheetKvCell) && refSheetKvCell.getValue().equals(true)))
-                        rowsToProcess.add(row);
+                if (newCheckmark(row, "kvColumn") || newCheckmark(row, "tColumn") || newCheckmark(row, "slColumn")){
+                    rowsToProcess.add(row);
                 }
             }
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
+            ex.printStackTrace();
             System.out.println("Die Prüfung auf neue Projekteinträge ist gescheitert.");
         }
         return rowsToProcess;
     }
 
+    private boolean newCheckmark(Row row, String columnKey) {
+        Cell cell = getCellByColumnId(row, ids.get(columnKey));
+        if (Objects.nonNull(cell) && cell.getValue().equals(true)) {
+            cell = getCellByColumnId(sameRowInReferenceSheet(row), ids.get(columnKey));
+            return !(Objects.nonNull(cell) && cell.getValue().equals(true));
+        }
+        return false;
+    }
+
     private Cell getCellByColumnId(Row row, long id){
-        return row.getCells().stream()
+        if (row != null)
+            return row.getCells().stream()
                 .filter(cell -> id == cell.getColumnId())
                 .findFirst()
                 .orElse(null);
+        else return null;
     }
 
     private Row sameRowInReferenceSheet(Row row){
@@ -128,7 +167,7 @@ public class WebHookService {
             return cell.getDisplayValue();
     }
 
-    String combineName(String clientName, String projectName){
+    private String combineName(String jobNumber, String clientName, String projectName){
         final int maxFileNameLengthImposedBySmartsheet = 50;
         final int longestTemplateNameFixedChars = 23; //inklusive "_" zwischen Kundenname und Projektname
         final int remainingLength = maxFileNameLengthImposedBySmartsheet - longestTemplateNameFixedChars;
@@ -140,14 +179,32 @@ public class WebHookService {
         if (clientName.length() + projectName.length() > remainingLength)
             projectName = projectName.substring(0, remainingLength - clientName.length() -1);
 
-        return clientName + "_" + projectName;
+        return jobNumber + "_" + clientName + "_" + projectName;
     }
 
-    private Folder copyFolder(Row row, String jobNumber, String combinedName) throws InvalidNameException, SmartsheetException {
+    private Long getFolderIdIfExists(long workSpaceId, String jobNumber) throws SmartsheetException {
+        List<Folder> folders = smartsheet.workspaceResources().getWorkspace(
+                workSpaceId,
+                null,
+                null)
+                .getFolders();
+
+        Folder targetFolder = folders.stream()
+                .filter(folder -> folder.getName().contains(jobNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (targetFolder == null)
+            return null;
+        else
+            return targetFolder.getId();
+    }
+
+    private Folder copyFolder(Row row, String combinedName) throws InvalidNameException, SmartsheetException {
         ContainerDestination destination = new ContainerDestination()
                 .setDestinationType(DestinationType.WORKSPACE)
                 .setDestinationId(getTargetWorkSpaceId(row))
-                .setNewName(jobNumber + "_" + combinedName);
+                .setNewName(combinedName);
 
         return smartsheet.folderResources().copyFolder(
                 ids.get("templateFolder"),
@@ -165,8 +222,8 @@ public class WebHookService {
         );
     }
 
-    private Long getTargetWorkSpaceId(Row row) throws InvalidNameException {
-        Cell labelCell = getCellByColumnId(row, ids.get("labelColumnId"));
+    private long getTargetWorkSpaceId(Row row) throws InvalidNameException {
+        Cell labelCell = getCellByColumnId(row, ids.get("labelColumn"));
 
         if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
             return ids.get("maedchenFilmWorkSpace");
@@ -175,17 +232,16 @@ public class WebHookService {
         } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
     }
 
-    private List<Sheet> renameSheets(Folder targetFolder, String jobNumber, String combinedName) throws SmartsheetException {
+    private List<Sheet> renameSheets(long targetFolderId, String combinedName) throws SmartsheetException {
         List<Sheet> templateSheets = smartsheet.folderResources()
-                .getFolder(targetFolder.getId(), null)
+                .getFolder(targetFolderId, null)
                 .getSheets();
 
         for (Sheet template: templateSheets) {
             Sheet sheetParameters = new Sheet();
             sheetParameters
                     .setName(template.getName()
-                            .replace("00000", jobNumber)
-                            .replace("Projekte", combinedName)
+                            .replace("00000_Projekte", combinedName)
                     )
                     .setId(template.getId());
 
@@ -194,54 +250,68 @@ public class WebHookService {
         return templateSheets;
     }
 
-    public void insertDataIntoFirstRow(Sheet sheetToUpdate, Map<String, String> cellData) {
+    private void insertDataIntoFirstRow(Sheet sheetToUpdate, Map<String, String> cellData) {
         try {
-            if (sheetToUpdate != null) {
-                sheetToUpdate = smartsheet.sheetResources().getSheet(
-                        sheetToUpdate.getId(),
-                        null,
-                        null,
-                        null,
-                        Set.of(1),
-                        null,
-                        null,
-                        null
-                );
-                Row rowToUpdate = sheetToUpdate.getRows().get(0);
-                List<Cell> cellsToUpdate = new ArrayList<>();
+            sheetToUpdate = smartsheet.sheetResources().getSheet(
+                    sheetToUpdate.getId(),
+                    null,
+                    null,
+                    null,
+                    Set.of(1),
+                    null,
+                    null,
+                    null
+            );
+            Row rowToUpdate = sheetToUpdate.getRows().get(0);
+            List<Cell> cellsToUpdate = new ArrayList<>();
 
-                Sheet finalSheetToUpdate = sheetToUpdate;
-                cellData.forEach((columnTitle, value) -> {
-                    Cell targetCell = getCellByColumnTitle(finalSheetToUpdate, rowToUpdate, columnTitle);
-                    if (targetCell != null) {
-                        targetCell.setValue(value);
-                        cellsToUpdate.add(targetCell);
-                    }
-                });
-                Row newRow = new Row();
-                newRow.setId(rowToUpdate.getId());
-                newRow.setCells(cellsToUpdate);
+            Sheet finalSheetToUpdate = sheetToUpdate;
+            cellData.forEach((columnTitle, value) -> {
+                Cell targetCell = getCellByColumnTitle(finalSheetToUpdate, rowToUpdate, columnTitle);
+                if (targetCell != null) {
+                    targetCell.setValue(value);
+                    cellsToUpdate.add(targetCell);
+                }
+            });
+            Row newRow = new Row();
+            newRow.setId(rowToUpdate.getId());
+            newRow.setCells(cellsToUpdate);
 
-                smartsheet.sheetResources().rowResources().updateRows(
-                        finalSheetToUpdate.getId(),
-                        List.of(newRow)
-                );
-            }
+            smartsheet.sheetResources().rowResources().updateRows(
+                    finalSheetToUpdate.getId(),
+                    List.of(newRow)
+            );
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
             System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
         }
     }
 
+    private void copySheetToFolder(long sheetId, long targetFolderId, String combinedName, String nameAppendix) throws SmartsheetException {
+        Sheet sheet = new Sheet();
+        sheet.setFromId(sheetId);
+        sheet.setName(combinedName + "_" + nameAppendix);
+
+        smartsheet.sheetResources().createSheetInFolderFromTemplate(
+                targetFolderId,
+                sheet,
+                EnumSet.of(
+                        SheetTemplateInclusion.ATTACHMENTS,
+                        SheetTemplateInclusion.CELLLINKS,
+                        SheetTemplateInclusion.DATA,
+                        SheetTemplateInclusion.DISCUSSIONS,
+                        SheetTemplateInclusion.FORMS
+                )
+        );
+    }
+
     public boolean authenticateCallBack(String hmacHeader, String requestBody) {
-   /*     try{
+        try {
             return hmacHeader.equals(calculateHmac(constants.getSharedSecret(), requestBody));
-        }
-        catch (GeneralSecurityException ex){
+        } catch (GeneralSecurityException ex) {
             System.out.println(ex.getMessage());
             return false;
-        }*/
-        return true;
+        }
     }
 
     private String calculateHmac(String sharedSecret, String callbackBody) throws GeneralSecurityException {
