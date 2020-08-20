@@ -3,6 +3,9 @@ package hubsoft.smartsheet.sf.automation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 public class Constants {
 
@@ -33,11 +36,37 @@ public class Constants {
     @Value("${constants.ids.asp-column}")
     private long aspColumnId;
 
+    @Value("${constants.ids.kv-column}")
+    private long kvColumnId;
+
+    @Value("${constants.ids.t-column}")
+    private long tColumnId;
+
+    @Value("${constants.ids.sl-column}")
+    private long slColumnId;
+
     @Value("${constants.ids.maedchenfilm-workspace}")
     private long maedchenFilmWorkSpaceId;
 
     @Value("${constants.ids.eleven-workspace}")
     private long elevenWorkSpaceId;
+
+    private final Map<String, Long> ids = new HashMap<>();
+
+    public Constants() {
+        ids.put("inputSheet", inputSheetId);
+        ids.put("templateFolder", templateFolderId);
+        ids.put("jobNumberColumn", jobNumberColumnId);
+        ids.put("labelColumn", labelColumnId);
+        ids.put("clientNameColumn", clientNameColumnId);
+        ids.put("projectNameColumn", projectNameColumnId);
+        ids.put("aspColumn", aspColumnId);
+        ids.put("kvColumn", kvColumnId);
+        ids.put("tColumn", tColumnId);
+        ids.put("slColumn", slColumnId);
+        ids.put("maedchenFilmWorkSpace", maedchenFilmWorkSpaceId);
+        ids.put("elevenWorkSpace", elevenWorkSpaceId);
+    }
 
     public String getAccessToken() {
         return accessToken;
@@ -51,35 +80,7 @@ public class Constants {
         return inputSheetId;
     }
 
-    public long getTemplateFolderId() {
-        return templateFolderId;
-    }
-
-    public long getJobNumberColumnId() {
-        return jobNumberColumnId;
-    }
-
-    public long getLabelColumnId() {
-        return labelColumnId;
-    }
-
-    public long getClientNameColumnId() {
-        return clientNameColumnId;
-    }
-
-    public long getProjectNameColumnId() {
-        return projectNameColumnId;
-    }
-
-    public long getAspColumnId() {
-        return aspColumnId;
-    }
-
-    public long getMaedchenFilmWorkSpaceId() {
-        return maedchenFilmWorkSpaceId;
-    }
-
-    public long getElevenWorkSpaceId() {
-        return elevenWorkSpaceId;
+    public Map<String, Long> getIds() {
+        return ids;
     }
 }

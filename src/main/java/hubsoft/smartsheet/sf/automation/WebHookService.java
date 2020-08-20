@@ -22,35 +22,35 @@ import java.util.*;
 @Service
 public class WebHookService {
 
-    private final Constants constants;
+    private final Map<String, Long> ids;
     private final Smartsheet smartsheet;
 
     @Autowired
     public WebHookService(Constants constants) {
-        this.constants = constants;
-         smartsheet = new SmartsheetBuilder()
+        ids = constants.getIds();
+        smartsheet = new SmartsheetBuilder()
                 .setAccessToken(constants.getAccessToken())
                 .build();
     }
 
     public void processTemplates() {
         try {
-            Sheet inputSheet = smartsheet.sheetResources().getSheet(constants.getInputSheetId(), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
+            Sheet inputSheet = smartsheet.sheetResources().getSheet(ids.get("inputSheet"), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
             List<Row> newRows = checkForNewRows(inputSheet);
 
             for (Row row: newRows) {
-                Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
+                Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
                 String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
 
-                Cell clientNameCell = getCellByColumnId(row, constants.getClientNameColumnId());
+                Cell clientNameCell = getCellByColumnId(row, ids.get("clientNameColumn"));
                 String clientName = checkAndGetCellContent(clientNameCell, "Kundenname");
 
-                Cell projectNameCell = getCellByColumnId(row, constants.getProjectNameColumnId());
+                Cell projectNameCell = getCellByColumnId(row, ids.get("projectNameColumn"));
                 String projectName = checkAndGetCellContent(projectNameCell, "Projektname");
 
-                Cell aspCell = getCellByColumnId(row, constants.getAspColumnId());
+                Cell aspCell = getCellByColumnId(row, ids.get("aspColumn"));
                 String asp = "";
                 if (aspCell != null && StringUtils.hasText(aspCell.getDisplayValue()))
                     asp = aspCell.getDisplayValue();
@@ -83,8 +83,9 @@ public class WebHookService {
             double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.getSheet());
 
             for (Row row : inputSheet.getRows()) {
-                Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
-                if (Objects.nonNull(jobNumberCell) && (double) jobNumberCell.getValue() > previousLatestJobNumber)
+                Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
+                if (Objects.nonNull(jobNumberCell)
+                        && (double) jobNumberCell.getValue() > previousLatestJobNumber)
                     newRows.add(row);
             }
         } catch (Exception ex) {
@@ -97,7 +98,7 @@ public class WebHookService {
     private double getHighestJobNumber(Sheet sheet){
         double highestValue = 0d;
         for (Row row: sheet.getRows()){
-            Cell jobNumberCell = getCellByColumnId(row, constants.getJobNumberColumnId());
+            Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
             if (jobNumberCell != null) {
                 double jobNumber = (double) jobNumberCell.getValue();
                 if (jobNumber > highestValue)
@@ -155,7 +156,7 @@ public class WebHookService {
                 .setNewName(jobNumber + "_" + combinedName);
 
         return smartsheet.folderResources().copyFolder(
-                constants.getTemplateFolderId(),
+                ids.get("templateFolder"),
                 destination,
                 EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
                         FolderCopyInclusion.CELLLINKS,
@@ -171,12 +172,12 @@ public class WebHookService {
     }
 
     private Long getTargetWorkSpaceId(Row row) throws InvalidNameException {
-        Cell labelCell = getCellByColumnId(row, constants.getLabelColumnId());
+        Cell labelCell = getCellByColumnId(row, ids.get("labelColumnId"));
 
         if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
-            return constants.getMaedchenFilmWorkSpaceId();
+            return ids.get("maedchenFilmWorkSpace");
         } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
-            return constants.getElevenWorkSpaceId();
+            return ids.get("elevenWorkSpace");
         } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
     }
 
