@@ -38,7 +38,7 @@ public class WebHookService {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(ids.get("inputSheet"), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
-            List<Row> newRows = checkForNewRows(inputSheet);
+            List<Row> newRows = checkForRowsToProcess(inputSheet);
 
             for (Row row: newRows) {
                 Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
@@ -77,40 +77,34 @@ public class WebHookService {
         }
     }
 
-    private List<Row> checkForNewRows(Sheet inputSheet) {
-        List<Row> newRows = new ArrayList<>();
+    private List<Row> checkForRowsToProcess(Sheet inputSheet) {
+        List<Row> rowsToProcess = new ArrayList<>();
         try {
-            double previousLatestJobNumber = getHighestJobNumber(ReferenceSheet.getSheet());
-
             for (Row row : inputSheet.getRows()) {
-                Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
-                if (Objects.nonNull(jobNumberCell)
-                        && (double) jobNumberCell.getValue() > previousLatestJobNumber)
-                    newRows.add(row);
+                Cell kvCell = getCellByColumnId(row, ids.get("kvColumn"));
+                if (Objects.nonNull(kvCell) && kvCell.getValue().equals(true)) {
+                    Cell refSheetKvCell = getCellByColumnId(sameRowInReferenceSheet(row), ids.get("kvColumn"));
+                    if (!(Objects.nonNull(refSheetKvCell) && refSheetKvCell.getValue().equals(true)))
+                        rowsToProcess.add(row);
+                }
             }
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Prüfung auf neue Projekteinträge ist gescheitert.");
         }
-        return newRows;
-    }
-
-    private double getHighestJobNumber(Sheet sheet){
-        double highestValue = 0d;
-        for (Row row: sheet.getRows()){
-            Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
-            if (jobNumberCell != null) {
-                double jobNumber = (double) jobNumberCell.getValue();
-                if (jobNumber > highestValue)
-                    highestValue = jobNumber;
-            }
-        }
-        return highestValue;
+        return rowsToProcess;
     }
 
     private Cell getCellByColumnId(Row row, long id){
         return row.getCells().stream()
                 .filter(cell -> id == cell.getColumnId())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Row sameRowInReferenceSheet(Row row){
+        return ReferenceSheet.getSheet().getRows().stream()
+                .filter(oldRow -> oldRow.getId().equals(row.getId()))
                 .findFirst()
                 .orElse(null);
     }
