@@ -42,7 +42,6 @@ public class WebHookService {
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
             Set<Row> rowsToProcess = checkForRowsToProcess(inputSheet);
-
             for (Row row: rowsToProcess) {
                 Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
                 String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
@@ -61,11 +60,16 @@ public class WebHookService {
                 String combinedName = combineName(jobNumber, clientName, projectName);
 
                 long targetFolderId;
+                Long existingFolderId;
                 if (newCheckmark(row, "kvColumn")) {
+                    existingFolderId = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
                     targetFolderId = copyFolder(row, combinedName).getId();
+                    if (existingFolderId != null){
+                        cleanupExistingFolder(existingFolderId, targetFolderId);
+                    }
                 } else {
-                    Long id = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
-                    if (id == null) {
+                    existingFolderId = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
+                    if (existingFolderId == null) {
                         Folder folderParameters = new Folder();
                         folderParameters.setName(combinedName);
 
@@ -73,7 +77,7 @@ public class WebHookService {
                                 .createFolder(getTargetWorkSpaceId(row), folderParameters)
                                 .getId();
                     } else {
-                        targetFolderId = id;
+                        targetFolderId = existingFolderId;
                     }
                 }
 
@@ -98,7 +102,6 @@ public class WebHookService {
 
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
-            ex.printStackTrace();
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
         }
     }
@@ -196,6 +199,16 @@ public class WebHookService {
             return targetFolder.getId();
     }
 
+    private long getTargetWorkSpaceId(Row row) throws InvalidNameException {
+        Cell labelCell = getCellByColumnId(row, ids.get("labelColumn"));
+
+        if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
+            return ids.get("maedchenFilmWorkSpace");
+        } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
+            return ids.get("elevenWorkSpace");
+        } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
+    }
+
     private Folder copyFolder(Row row, String combinedName) throws InvalidNameException, SmartsheetException {
         ContainerDestination destination = new ContainerDestination()
                 .setDestinationType(DestinationType.WORKSPACE)
@@ -218,14 +231,22 @@ public class WebHookService {
         );
     }
 
-    private long getTargetWorkSpaceId(Row row) throws InvalidNameException {
-        Cell labelCell = getCellByColumnId(row, ids.get("labelColumn"));
+    private void cleanupExistingFolder(long sourceFolderId, long targetFolderId) throws SmartsheetException {
+        List<Sheet> existingSheets = smartsheet.folderResources()
+                .getFolder(sourceFolderId, null)
+                .getSheets();
 
-        if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
-            return ids.get("maedchenFilmWorkSpace");
-        } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
-            return ids.get("elevenWorkSpace");
-        } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
+        ContainerDestination destination = new ContainerDestination();
+        destination.setDestinationType(DestinationType.FOLDER)
+                .setDestinationId(targetFolderId);
+
+        for (Sheet sheet: existingSheets){
+            smartsheet.sheetResources().moveSheet(
+                    sheet.getId(),
+                    destination
+            );
+        }
+        smartsheet.folderResources().deleteFolder(sourceFolderId);
     }
 
     private List<Sheet> renameSheets(long targetFolderId, String combinedName) throws SmartsheetException {
