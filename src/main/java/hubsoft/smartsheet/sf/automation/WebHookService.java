@@ -63,15 +63,15 @@ public class WebHookService {
 
                 boolean isMaedchenFilmWorkSpace = getTargetWorkSpaceId(row) == ids.get(id.MF_WORKSPACE);
 
-                long targetFolderId = 0;
+                long targetFolderId;
                 if (newCheckmark(row, id.T_COLUMN)) {
                     targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.TIMING_FOLDER_MF) : ids.get(id.TIMING_FOLDER_ELEVEN);
                     copySheetToFolder(ids.get(id.TIMING_TEMPLATE), targetFolderId, combinedName, "Timing");
                 }
-                if (newCheckmark(row, id.SL_COLUMN))
+                if (newCheckmark(row, id.SL_COLUMN)) {
                     targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.SHOTLIST_FOLDER_MF) : ids.get(id.SHOTLIST_FOLDER_ELEVEN);
                     copySheetToFolder(ids.get(id.SHOTLIST_TEMPLATE), targetFolderId, combinedName, "Shotlist");
-
+                }
                 if (newCheckmark(row, id.KV_COLUMN)) {
                     targetFolderId = copyFolder(row, combinedName).getId();
 
