@@ -259,6 +259,9 @@ public class WebHookService {
             sheetParameters
                     .setName(template.getName()
                             .replace("00000_Projekte", combinedName)
+                            .replace("00000_Projekt", combinedName)
+                            .replace("XXXXX_Projekte", combinedName)
+                            .replace("XXXXX_Projekt", combinedName)
                     )
                     .setId(template.getId());
 
