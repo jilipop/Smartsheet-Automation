@@ -21,17 +21,17 @@ public class Constants {
     @Value("${constants.ids.template-folder}")
     private long templateFolderId;
 
-    @Value("${constants.ids.timing-folder-maedchenfilm}")
-    private long timingFolderMaedchenFilmId;
+    @Value("${constants.ids.timing-workspace-maedchenfilm}")
+    private long timingWorkspaceMaedchenFilmId;
 
-    @Value("${constants.ids.timing-folder-eleven}")
-    private long timingFolderElevenId;
+    @Value("${constants.ids.timing-workspace-eleven}")
+    private long timingWorkspaceElevenId;
 
-    @Value("${constants.ids.shotlist-folder-maedchenfilm}")
-    private long shotlistFolderMaedchenFilmId;
+    @Value("${constants.ids.shotlist-workspace-maedchenfilm}")
+    private long shotlistWorkspaceMaedchenFilmId;
 
-    @Value("${constants.ids.shotlist-folder-eleven}")
-    private long shotlistFolderElevenId;
+    @Value("${constants.ids.shotlist-workspace-eleven}")
+    private long shotlistWorkspaceElevenId;
 
     @Value("${constants.ids.timing-sheet}")
     private long timingTemplateId;
@@ -72,10 +72,10 @@ public class Constants {
     public enum id{
         INPUT_SHEET,
         TEMPLATE_FOLDER,
-        TIMING_FOLDER_MF,
-        TIMING_FOLDER_ELEVEN,
-        SHOTLIST_FOLDER_MF,
-        SHOTLIST_FOLDER_ELEVEN,
+        TIMING_WORKSPACE_MF,
+        TIMING_WORKSPACE_ELEVEN,
+        SHOTLIST_WORKSPACE_MF,
+        SHOTLIST_WORKSPACE_ELEVEN,
         TIMING_TEMPLATE,
         SHOTLIST_TEMPLATE,
         JOB_NR_COLUMN,
@@ -109,10 +109,10 @@ public class Constants {
        if (ids.size() == 0) {
            ids.put(id.INPUT_SHEET, inputSheetId);
            ids.put(id.TEMPLATE_FOLDER, templateFolderId);
-           ids.put(id.TIMING_FOLDER_MF, timingFolderMaedchenFilmId);
-           ids.put(id.TIMING_FOLDER_ELEVEN, timingFolderElevenId);
-           ids.put(id.SHOTLIST_FOLDER_MF, shotlistFolderMaedchenFilmId);
-           ids.put(id.SHOTLIST_FOLDER_ELEVEN, shotlistFolderElevenId);
+           ids.put(id.TIMING_WORKSPACE_MF, timingWorkspaceMaedchenFilmId);
+           ids.put(id.TIMING_WORKSPACE_ELEVEN, timingWorkspaceElevenId);
+           ids.put(id.SHOTLIST_WORKSPACE_MF, shotlistWorkspaceMaedchenFilmId);
+           ids.put(id.SHOTLIST_WORKSPACE_ELEVEN, shotlistWorkspaceElevenId);
            ids.put(id.TIMING_TEMPLATE, timingTemplateId);
            ids.put(id.SHOTLIST_TEMPLATE, shotlistTemplateId);
            ids.put(id.JOB_NR_COLUMN, jobNumberColumnId);

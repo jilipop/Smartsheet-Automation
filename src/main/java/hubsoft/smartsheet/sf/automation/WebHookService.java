@@ -63,19 +63,19 @@ public class WebHookService {
 
                 boolean isMaedchenFilmWorkSpace = getTargetWorkSpaceId(row) == ids.get(id.MF_WORKSPACE);
 
-                long targetFolderId;
+                long targetId;
                 if (newCheckmark(row, id.T_COLUMN)) {
-                    targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.TIMING_FOLDER_MF) : ids.get(id.TIMING_FOLDER_ELEVEN);
-                    copySheetToFolder(ids.get(id.TIMING_TEMPLATE), targetFolderId, combinedName, "Timing");
+                    targetId = isMaedchenFilmWorkSpace ? ids.get(id.TIMING_WORKSPACE_MF) : ids.get(id.TIMING_WORKSPACE_ELEVEN);
+                    copySheetToWorkspace(ids.get(id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
                 }
                 if (newCheckmark(row, id.SL_COLUMN)) {
-                    targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.SHOTLIST_FOLDER_MF) : ids.get(id.SHOTLIST_FOLDER_ELEVEN);
-                    copySheetToFolder(ids.get(id.SHOTLIST_TEMPLATE), targetFolderId, combinedName, "Shotlist");
+                    targetId = isMaedchenFilmWorkSpace ? ids.get(id.SHOTLIST_WORKSPACE_MF) : ids.get(id.SHOTLIST_WORKSPACE_ELEVEN);
+                    copySheetToWorkspace(ids.get(id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
                 }
                 if (newCheckmark(row, id.KV_COLUMN)) {
-                    targetFolderId = copyFolder(row, combinedName).getId();
+                    targetId = copyFolder(row, combinedName).getId();
 
-                    List<Sheet> targetSheets = renameSheets(targetFolderId, combinedName);
+                    List<Sheet> targetSheets = renameSheets(targetId, combinedName);
 
                     Sheet sheetToUpdate = targetSheets.stream()
                             .filter(sheet -> sheet.getName().contains("Finanzen"))
@@ -259,13 +259,13 @@ public class WebHookService {
         }
     }
 
-    private void copySheetToFolder(long sheetId, long targetFolderId, String combinedName, String nameAppendix) throws SmartsheetException {
+    private void copySheetToWorkspace(long sheetId, long targetWorkspaceId, String combinedName, String nameAppendix) throws SmartsheetException {
         Sheet sheet = new Sheet();
         sheet.setFromId(sheetId);
         sheet.setName(combinedName + "_" + nameAppendix);
 
-        smartsheet.sheetResources().createSheetInFolderFromTemplate(
-                targetFolderId,
+        smartsheet.sheetResources().createSheetInWorkspaceFromTemplate(
+                targetWorkspaceId,
                 sheet,
                 EnumSet.of(
                         SheetTemplateInclusion.ATTACHMENTS,
