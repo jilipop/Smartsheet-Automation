@@ -21,6 +21,18 @@ public class Constants {
     @Value("${constants.ids.template-folder}")
     private long templateFolderId;
 
+    @Value("${constants.ids.timing-folder-maedchenfilm}")
+    private long timingFolderMaedchenFilmId;
+
+    @Value("${constants.ids.timing-folder-eleven}")
+    private long timingFolderElevenId;
+
+    @Value("${constants.ids.shotlist-folder-maedchenfilm}")
+    private long shotlistFolderMaedchenFilmId;
+
+    @Value("${constants.ids.shotlist-folder-eleven}")
+    private long shotlistFolderElevenId;
+
     @Value("${constants.ids.timing-sheet}")
     private long timingTemplateId;
 
@@ -57,7 +69,28 @@ public class Constants {
     @Value("${constants.ids.eleven-workspace}")
     private long elevenWorkSpaceId;
 
-    private final Map<String, Long> ids = new HashMap<>();
+    public enum id{
+        INPUT_SHEET,
+        TEMPLATE_FOLDER,
+        TIMING_FOLDER_MF,
+        TIMING_FOLDER_ELEVEN,
+        SHOTLIST_FOLDER_MF,
+        SHOTLIST_FOLDER_ELEVEN,
+        TIMING_TEMPLATE,
+        SHOTLIST_TEMPLATE,
+        JOB_NR_COLUMN,
+        LABEL_COLUMN,
+        CLIENT_COLUMN,
+        PROJECT_COLUMN,
+        ASP_COLUMN,
+        KV_COLUMN,
+        T_COLUMN,
+        SL_COLUMN,
+        MF_WORKSPACE,
+        ELEVEN_WORKSPACE
+    }
+
+    private final Map<id, Long> ids = new HashMap<>();
 
     public String getAccessToken() {
         return accessToken;
@@ -72,21 +105,27 @@ public class Constants {
         return inputSheetId;
     }
 
-    public Map<String, Long> getIds() {
-        ids.put("inputSheet", inputSheetId);
-        ids.put("templateFolder", templateFolderId);
-        ids.put("timingTemplate", timingTemplateId);
-        ids.put("shotlistTemplate", shotlistTemplateId);
-        ids.put("jobNumberColumn", jobNumberColumnId);
-        ids.put("labelColumn", labelColumnId);
-        ids.put("clientNameColumn", clientNameColumnId);
-        ids.put("projectNameColumn", projectNameColumnId);
-        ids.put("aspColumn", aspColumnId);
-        ids.put("kvColumn", kvColumnId);
-        ids.put("tColumn", tColumnId);
-        ids.put("slColumn", slColumnId);
-        ids.put("maedchenFilmWorkSpace", maedchenFilmWorkSpaceId);
-        ids.put("elevenWorkSpace", elevenWorkSpaceId);
+    public Map<id, Long> getIds() {
+       if (ids.size() == 0) {
+           ids.put(id.INPUT_SHEET, inputSheetId);
+           ids.put(id.TEMPLATE_FOLDER, templateFolderId);
+           ids.put(id.TIMING_FOLDER_MF, timingFolderMaedchenFilmId);
+           ids.put(id.TIMING_FOLDER_ELEVEN, timingFolderElevenId);
+           ids.put(id.SHOTLIST_FOLDER_MF, shotlistFolderMaedchenFilmId);
+           ids.put(id.SHOTLIST_FOLDER_ELEVEN, shotlistFolderElevenId);
+           ids.put(id.TIMING_TEMPLATE, timingTemplateId);
+           ids.put(id.SHOTLIST_TEMPLATE, shotlistTemplateId);
+           ids.put(id.JOB_NR_COLUMN, jobNumberColumnId);
+           ids.put(id.LABEL_COLUMN, labelColumnId);
+           ids.put(id.CLIENT_COLUMN, clientNameColumnId);
+           ids.put(id.PROJECT_COLUMN, projectNameColumnId);
+           ids.put(id.ASP_COLUMN, aspColumnId);
+           ids.put(id.KV_COLUMN, kvColumnId);
+           ids.put(id.T_COLUMN, tColumnId);
+           ids.put(id.SL_COLUMN, slColumnId);
+           ids.put(id.MF_WORKSPACE, maedchenFilmWorkSpaceId);
+           ids.put(id.ELEVEN_WORKSPACE, elevenWorkSpaceId);
+       }
         return ids;
     }
 }
