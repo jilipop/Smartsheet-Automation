@@ -20,11 +20,13 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
 import java.util.*;
 
+import static hubsoft.smartsheet.sf.automation.Constants.*;
+
 @Service
 public class WebHookService {
 
     private final Constants constants;
-    private final Map<String, Long> ids;
+    private final Map<id, Long> ids;
     private final Smartsheet smartsheet;
 
     @Autowired
@@ -38,68 +40,54 @@ public class WebHookService {
 
     public void processTemplates() {
         try {
-            Sheet inputSheet = smartsheet.sheetResources().getSheet(ids.get("inputSheet"), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
+            Sheet inputSheet = smartsheet.sheetResources().getSheet(ids.get(id.INPUT_SHEET), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
 
             Set<Row> rowsToProcess = checkForRowsToProcess(inputSheet);
             for (Row row: rowsToProcess) {
-                Cell jobNumberCell = getCellByColumnId(row, ids.get("jobNumberColumn"));
+                Cell jobNumberCell = getCellByColumnId(row, ids.get(id.JOB_NR_COLUMN));
                 String jobNumber = checkAndGetCellContent(jobNumberCell, "Job-Nr.");
 
-                Cell clientNameCell = getCellByColumnId(row, ids.get("clientNameColumn"));
+                Cell clientNameCell = getCellByColumnId(row, ids.get(id.CLIENT_COLUMN));
                 String clientName = checkAndGetCellContent(clientNameCell, "Kundenname");
 
-                Cell projectNameCell = getCellByColumnId(row, ids.get("projectNameColumn"));
+                Cell projectNameCell = getCellByColumnId(row, ids.get(id.PROJECT_COLUMN));
                 String projectName = checkAndGetCellContent(projectNameCell, "Projektname");
 
-                Cell aspCell = getCellByColumnId(row, ids.get("aspColumn"));
+                Cell aspCell = getCellByColumnId(row, ids.get(id.ASP_COLUMN));
                 String asp = "";
                 if (aspCell != null && StringUtils.hasText(aspCell.getDisplayValue()))
                     asp = aspCell.getDisplayValue();
 
                 String combinedName = combineName(jobNumber, clientName, projectName);
 
-                long targetFolderId;
-                Long existingFolderId;
-                if (newCheckmark(row, "kvColumn")) {
-                    existingFolderId = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
-                    targetFolderId = copyFolder(row, combinedName).getId();
-                    if (existingFolderId != null){
-                        cleanupExistingFolder(existingFolderId, targetFolderId);
-                    }
-                } else {
-                    existingFolderId = getFolderIdIfExists(getTargetWorkSpaceId(row), jobNumber);
-                    if (existingFolderId == null) {
-                        Folder folderParameters = new Folder();
-                        folderParameters.setName(combinedName);
+                boolean isMaedchenFilmWorkSpace = getTargetWorkSpaceId(row) == ids.get(id.MF_WORKSPACE);
 
-                        targetFolderId = smartsheet.workspaceResources().folderResources()
-                                .createFolder(getTargetWorkSpaceId(row), folderParameters)
-                                .getId();
-                    } else {
-                        targetFolderId = existingFolderId;
-                    }
+                long targetFolderId = 0;
+                if (newCheckmark(row, id.T_COLUMN)) {
+                    targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.TIMING_FOLDER_MF) : ids.get(id.TIMING_FOLDER_ELEVEN);
+                    copySheetToFolder(ids.get(id.TIMING_TEMPLATE), targetFolderId, combinedName, "Timing");
                 }
+                if (newCheckmark(row, id.SL_COLUMN))
+                    targetFolderId = isMaedchenFilmWorkSpace ? ids.get(id.SHOTLIST_FOLDER_MF) : ids.get(id.SHOTLIST_FOLDER_ELEVEN);
+                    copySheetToFolder(ids.get(id.SHOTLIST_TEMPLATE), targetFolderId, combinedName, "Shotlist");
 
-                if (newCheckmark(row, "tColumn"))
-                    copySheetToFolder(ids.get("timingTemplate"), targetFolderId, combinedName, "Timing");
-                if (newCheckmark(row, "slColumn"))
-                    copySheetToFolder(ids.get("shotlistTemplate"), targetFolderId, combinedName, "Shotlist");
+                if (newCheckmark(row, id.KV_COLUMN)) {
+                    targetFolderId = copyFolder(row, combinedName).getId();
 
-                List<Sheet> targetSheets = renameSheets(targetFolderId, combinedName);
+                    List<Sheet> targetSheets = renameSheets(targetFolderId, combinedName);
 
-                Sheet sheetToUpdate = targetSheets.stream()
-                        .filter(sheet -> sheet.getName().contains("Finanzen"))
-                        .findFirst()
-                        .orElse(null);
+                    Sheet sheetToUpdate = targetSheets.stream()
+                            .filter(sheet -> sheet.getName().contains("Finanzen"))
+                            .findFirst()
+                            .orElse(null);
 
-                if (sheetToUpdate != null)
-                    insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
+                    if (sheetToUpdate != null)
+                        insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
+                }
             }
-
             ReferenceSheet.setSheet(inputSheet);
             System.out.println("Aktualisierung abgeschlossen.");
-
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
@@ -110,7 +98,7 @@ public class WebHookService {
         Set<Row> rowsToProcess = new HashSet<>();
         try {
             for (Row row : inputSheet.getRows()) {
-                if (newCheckmark(row, "kvColumn") || newCheckmark(row, "tColumn") || newCheckmark(row, "slColumn")){
+                if (newCheckmark(row, id.KV_COLUMN) || newCheckmark(row, id.T_COLUMN) || newCheckmark(row, id.SL_COLUMN)){
                     rowsToProcess.add(row);
                 }
             }
@@ -122,7 +110,7 @@ public class WebHookService {
         return rowsToProcess;
     }
 
-    private boolean newCheckmark(Row row, String columnKey) {
+    private boolean newCheckmark(Row row, id columnKey) {
         Cell cell = getCellByColumnId(row, ids.get(columnKey));
         if (Objects.nonNull(cell) && cell.getValue().equals(true)) {
             cell = getCellByColumnId(sameRowInReferenceSheet(row), ids.get(columnKey));
@@ -181,31 +169,13 @@ public class WebHookService {
         return jobNumber + "_" + clientName + "_" + projectName;
     }
 
-    private Long getFolderIdIfExists(long workSpaceId, String jobNumber) throws SmartsheetException {
-        List<Folder> folders = smartsheet.workspaceResources().getWorkspace(
-                workSpaceId,
-                null,
-                null)
-                .getFolders();
-
-        Folder targetFolder = folders.stream()
-                .filter(folder -> folder.getName().contains(jobNumber))
-                .findFirst()
-                .orElse(null);
-
-        if (targetFolder == null)
-            return null;
-        else
-            return targetFolder.getId();
-    }
-
     private long getTargetWorkSpaceId(Row row) throws InvalidNameException {
-        Cell labelCell = getCellByColumnId(row, ids.get("labelColumn"));
+        Cell labelCell = getCellByColumnId(row, ids.get(id.LABEL_COLUMN));
 
         if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
-            return ids.get("maedchenFilmWorkSpace");
+            return ids.get(id.MF_WORKSPACE);
         } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
-            return ids.get("elevenWorkSpace");
+            return ids.get(id.ELEVEN_WORKSPACE);
         } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
     }
 
@@ -216,7 +186,7 @@ public class WebHookService {
                 .setNewName(combinedName);
 
         return smartsheet.folderResources().copyFolder(
-                ids.get("templateFolder"),
+                ids.get(id.TEMPLATE_FOLDER),
                 destination,
                 EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
                         FolderCopyInclusion.CELLLINKS,
@@ -229,24 +199,6 @@ public class WebHookService {
                         FolderCopyInclusion.SHARES),
                 null
         );
-    }
-
-    private void cleanupExistingFolder(long sourceFolderId, long targetFolderId) throws SmartsheetException {
-        List<Sheet> existingSheets = smartsheet.folderResources()
-                .getFolder(sourceFolderId, null)
-                .getSheets();
-
-        ContainerDestination destination = new ContainerDestination();
-        destination.setDestinationType(DestinationType.FOLDER)
-                .setDestinationId(targetFolderId);
-
-        for (Sheet sheet: existingSheets){
-            smartsheet.sheetResources().moveSheet(
-                    sheet.getId(),
-                    destination
-            );
-        }
-        smartsheet.folderResources().deleteFolder(sourceFolderId);
     }
 
     private List<Sheet> renameSheets(long targetFolderId, String combinedName) throws SmartsheetException {
