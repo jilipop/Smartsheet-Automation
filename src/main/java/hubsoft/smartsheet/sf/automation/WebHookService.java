@@ -77,14 +77,10 @@ public class WebHookService {
                     }
                 }
 
-                Cell timingCell = getCellByColumnId(row, ids.get("tColumn"));
-                if (Objects.nonNull(timingCell) && timingCell.getValue().equals(true)) {
+                if (newCheckmark(row, "tColumn"))
                     copySheetToFolder(ids.get("timingTemplate"), targetFolderId, combinedName, "Timing");
-                }
-                Cell shotListCell = getCellByColumnId(row, ids.get("slColumn"));
-                if (Objects.nonNull(shotListCell) && shotListCell.getValue().equals(true)) {
+                if (newCheckmark(row, "slColumn"))
                     copySheetToFolder(ids.get("shotlistTemplate"), targetFolderId, combinedName, "Shotlist");
-                }
 
                 List<Sheet> targetSheets = renameSheets(targetFolderId, combinedName);
 
