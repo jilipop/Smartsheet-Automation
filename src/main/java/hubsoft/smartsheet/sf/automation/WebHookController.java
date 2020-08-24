@@ -2,10 +2,7 @@ package hubsoft.smartsheet.sf.automation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hubsoft.smartsheet.sf.automation.models.EventCallback;
-import hubsoft.smartsheet.sf.automation.models.HookResponseBody;
-import hubsoft.smartsheet.sf.automation.models.StatusChangeCallback;
-import hubsoft.smartsheet.sf.automation.models.VerificationRequest;
+import hubsoft.smartsheet.sf.automation.models.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -38,12 +35,16 @@ public class WebHookController {
             } else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
                 try {
                     EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
+
                     System.out.println("Smartsheet hat Updates gemeldet:");
                     eventCallback.getEvents().forEach(event -> System.out.println(event.getObjectType() + " " + event.getEventType()));
+                    System.out.println("Das ist der rohe JSON-String:");
+                    System.out.println(requestBodyString);
+
+                    webHookService.processTemplates(eventCallback.getScopeObjectId());
                 } catch (JsonProcessingException e) {
                     System.out.println(e.getMessage());
                 }
-                webHookService.processTemplates();
             } else {
                 try {
                     StatusChangeCallback statusChangeCallback = mapper.readValue(requestBodyString, StatusChangeCallback.class);

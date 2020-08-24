@@ -1,5 +1,6 @@
 package hubsoft.smartsheet.sf.automation;
 
+import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -39,58 +40,13 @@ public class Constants {
     @Value("${constants.ids.shotlist-sheet}")
     private long shotlistTemplateId;
 
-    @Value("${constants.ids.job-number-column}")
-    private long jobNumberColumnId;
-
-    @Value("${constants.ids.label-column}")
-    private long labelColumnId;
-
-    @Value("${constants.ids.client-name-column}")
-    private long clientNameColumnId;
-
-    @Value("${constants.ids.project-name-column}")
-    private long projectNameColumnId;
-
-    @Value("${constants.ids.asp-column}")
-    private long aspColumnId;
-
-    @Value("${constants.ids.kv-column}")
-    private long kvColumnId;
-
-    @Value("${constants.ids.t-column}")
-    private long tColumnId;
-
-    @Value("${constants.ids.sl-column}")
-    private long slColumnId;
-
     @Value("${constants.ids.maedchenfilm-workspace}")
     private long maedchenFilmWorkSpaceId;
 
     @Value("${constants.ids.eleven-workspace}")
     private long elevenWorkSpaceId;
 
-    public enum id{
-        INPUT_SHEET,
-        TEMPLATE_FOLDER,
-        TIMING_WORKSPACE_MF,
-        TIMING_WORKSPACE_ELEVEN,
-        SHOTLIST_WORKSPACE_MF,
-        SHOTLIST_WORKSPACE_ELEVEN,
-        TIMING_TEMPLATE,
-        SHOTLIST_TEMPLATE,
-        JOB_NR_COLUMN,
-        LABEL_COLUMN,
-        CLIENT_COLUMN,
-        PROJECT_COLUMN,
-        ASP_COLUMN,
-        KV_COLUMN,
-        T_COLUMN,
-        SL_COLUMN,
-        MF_WORKSPACE,
-        ELEVEN_WORKSPACE
-    }
-
-    private final Map<id, Long> ids = new HashMap<>();
+    private final Map<Id, Long> ids = new HashMap<>();
 
     public String getAccessToken() {
         return accessToken;
@@ -105,26 +61,17 @@ public class Constants {
         return inputSheetId;
     }
 
-    public Map<id, Long> getIds() {
+    public Map<Id, Long> getIds() {
        if (ids.size() == 0) {
-           ids.put(id.INPUT_SHEET, inputSheetId);
-           ids.put(id.TEMPLATE_FOLDER, templateFolderId);
-           ids.put(id.TIMING_WORKSPACE_MF, timingWorkspaceMaedchenFilmId);
-           ids.put(id.TIMING_WORKSPACE_ELEVEN, timingWorkspaceElevenId);
-           ids.put(id.SHOTLIST_WORKSPACE_MF, shotlistWorkspaceMaedchenFilmId);
-           ids.put(id.SHOTLIST_WORKSPACE_ELEVEN, shotlistWorkspaceElevenId);
-           ids.put(id.TIMING_TEMPLATE, timingTemplateId);
-           ids.put(id.SHOTLIST_TEMPLATE, shotlistTemplateId);
-           ids.put(id.JOB_NR_COLUMN, jobNumberColumnId);
-           ids.put(id.LABEL_COLUMN, labelColumnId);
-           ids.put(id.CLIENT_COLUMN, clientNameColumnId);
-           ids.put(id.PROJECT_COLUMN, projectNameColumnId);
-           ids.put(id.ASP_COLUMN, aspColumnId);
-           ids.put(id.KV_COLUMN, kvColumnId);
-           ids.put(id.T_COLUMN, tColumnId);
-           ids.put(id.SL_COLUMN, slColumnId);
-           ids.put(id.MF_WORKSPACE, maedchenFilmWorkSpaceId);
-           ids.put(id.ELEVEN_WORKSPACE, elevenWorkSpaceId);
+           ids.put(Id.TEMPLATE_FOLDER, templateFolderId);
+           ids.put(Id.TIMING_WORKSPACE_MF, timingWorkspaceMaedchenFilmId);
+           ids.put(Id.TIMING_WORKSPACE_ELEVEN, timingWorkspaceElevenId);
+           ids.put(Id.SHOTLIST_WORKSPACE_MF, shotlistWorkspaceMaedchenFilmId);
+           ids.put(Id.SHOTLIST_WORKSPACE_ELEVEN, shotlistWorkspaceElevenId);
+           ids.put(Id.TIMING_TEMPLATE, timingTemplateId);
+           ids.put(Id.SHOTLIST_TEMPLATE, shotlistTemplateId);
+           ids.put(Id.MF_WORKSPACE, maedchenFilmWorkSpaceId);
+           ids.put(Id.ELEVEN_WORKSPACE, elevenWorkSpaceId);
        }
         return ids;
     }
