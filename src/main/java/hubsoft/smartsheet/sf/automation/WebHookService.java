@@ -193,7 +193,7 @@ public class WebHookService {
             return ids.get(Id.MF_WORKSPACE);
         } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
             return ids.get(Id.ELEVEN_WORKSPACE);
-        } else throw new InvalidNameException("Breche ab, denn das Label ist weder \"Mädchenfilm\" noch \"Eleven\".");
+        } else throw new InvalidNameException("Da das Label weder \"Mädchenfilm\" noch \"Eleven\" ist, hätte diese Zeile eigentlich übersprungen werden sollen. Das hat aber offenbar nicht geklappt.");
     }
 
     private Folder copyFolder(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
