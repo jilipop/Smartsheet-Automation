@@ -13,11 +13,11 @@ public class Constants {
     @Value("${constants.access-token}")
     private String accessToken;
 
-    @Value("${constants.shared-secret}")
-    private String sharedSecret;
+    @Value("${constants.shared-secret-2020}")
+    private String sharedSecret2020;
 
-    @Value("${constants.ids.input-sheet}")
-    private long inputSheetId;
+    @Value("${constants.ids.input-sheet-2020}")
+    private long inputSheet2020Id;
 
     @Value("${constants.ids.template-folder}")
     private long templateFolderId;
@@ -53,12 +53,12 @@ public class Constants {
     }
 
     public String getSharedSecret() {
-        return sharedSecret;
+        return sharedSecret2020;
     }
 
     public long getInputSheetId() {
 
-        return inputSheetId;
+        return inputSheet2020Id;
     }
 
     public Map<Id, Long> getIds() {
