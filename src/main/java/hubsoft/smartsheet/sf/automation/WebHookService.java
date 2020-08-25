@@ -66,7 +66,11 @@ public class WebHookService {
                     throw new Exception("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
                 }
 
-                String asp = cells.get(ColName.ASP).getDisplayValue();
+                String asp = "";
+                Cell aspCell = cells.get(ColName.ASP);
+                if (aspCell != null)
+                    asp = aspCell.getDisplayValue();
+                String finalAsp = asp;
                 String combinedName = combineName(jobNumber, clientName, projectName);
 
                 try {
@@ -91,10 +95,11 @@ public class WebHookService {
 
                     List<Sheet> targetSheets = renameSheets(targetId, combinedName);
 
+
                     targetSheets.stream()
                             .filter(sheet -> sheet.getName().contains("Finanzen"))
                             .findFirst()
-                            .ifPresent(sheetToUpdate -> insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp)));
+                            .ifPresent(sheetToUpdate -> insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", finalAsp)));
                 }
             }
             ReferenceSheet.setSheet(inputSheetId, inputSheet);
@@ -306,7 +311,7 @@ public class WebHookService {
     }
 
     public boolean authenticateCallBack(String hmacHeader, String requestBody, long inputSheetId) {
-        try {
+       try {
             return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
         } catch (GeneralSecurityException ex) {
             System.out.println(ex.getMessage());
