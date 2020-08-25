@@ -9,8 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class ReferenceSheet implements CommandLineRunner{
@@ -18,7 +19,7 @@ public class ReferenceSheet implements CommandLineRunner{
     private final Constants constants;
     private final Smartsheet smartsheet;
 
-    private static Sheet sheet;
+    private final static Map<Long, Sheet> sheets = new HashMap<>();
 
     @Autowired
     public ReferenceSheet(Constants constants) {
@@ -30,27 +31,29 @@ public class ReferenceSheet implements CommandLineRunner{
 
     @Override
     public void run(String... args){
-        LocalDate date = LocalDate.now();
-        int currentYear = date.getYear();
-        long inputSheetId = constants.getInputSheetIds().get(currentYear);
-        save(inputSheetId);
-    }
-
-    private void save(long inputSheetId){
-        try {
-            sheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
-            System.out.println(sheet.getRows().size() + " Zeilen aus der Datei " + sheet.getName() + " geladen.");
-        } catch (SmartsheetException e) {
-            System.out.println(e.getMessage());
-            System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht gespeichert werden.");
+        for (long sheetId: constants.getInputSheetIds()) {
+            Sheet sheet = save(sheetId);
+            sheets.put(sheetId, sheet);
         }
     }
 
-    public static Sheet getSheet() {
-        return sheet;
+    private Sheet save(long inputSheetId){
+        try {
+            Sheet sheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
+            System.out.println(sheet.getRows().size() + " Zeilen aus der Datei " + sheet.getName() + " geladen.");
+            return sheet;
+        } catch (SmartsheetException e) {
+            System.out.println(e.getMessage());
+            System.out.println("Vorher-Zustand des Eingabe-Sheets konnte nicht gespeichert werden.");
+            return null;
+        }
     }
 
-    public static void setSheet(Sheet sheet) {
-        ReferenceSheet.sheet = sheet;
+    public static Sheet getSheet(long sheetId) {
+        return sheets.get(sheetId);
+    }
+
+    public static void setSheet(long sheetId, Sheet sheet) {
+        sheets.put(sheetId, sheet);
     }
 }

@@ -30,6 +30,8 @@ public class WebHookService {
     private final Map<String, Long> columnMap = new HashMap<>();
     private final Smartsheet smartsheet;
 
+    private Sheet referenceSheet;
+
     @Autowired
     public WebHookService(Constants constants) {
         this.constants = constants;
@@ -43,6 +45,8 @@ public class WebHookService {
         try {
             Sheet inputSheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
+
+            referenceSheet = ReferenceSheet.getSheet(inputSheetId);
 
             for (Column column: inputSheet.getColumns())
                 columnMap.put(column.getTitle(), column.getId());
@@ -93,7 +97,7 @@ public class WebHookService {
                             .ifPresent(sheetToUpdate -> insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp)));
                 }
             }
-            ReferenceSheet.setSheet(inputSheet);
+            ReferenceSheet.setSheet(inputSheetId, inputSheet);
             System.out.println("Aktualisierung abgeschlossen.");
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
@@ -159,7 +163,7 @@ public class WebHookService {
     }
 
     private Cell sameRowInReferenceSheet(Cell cell, Row row){
-        Row referenceRow = ReferenceSheet.getSheet().getRows().stream()
+        Row referenceRow = referenceSheet.getRows().stream()
                 .filter(oldRow -> oldRow.getId().equals(row.getId()))
                 .findFirst()
                 .orElse(null);
