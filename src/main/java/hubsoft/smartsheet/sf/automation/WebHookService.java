@@ -70,7 +70,7 @@ public class WebHookService {
                 Cell aspCell = cells.get(ColName.ASP);
                 if (aspCell != null)
                     asp = aspCell.getDisplayValue();
-                String finalAsp = asp;
+
                 String combinedName = combineName(jobNumber, clientName, projectName);
 
                 try {
@@ -96,10 +96,13 @@ public class WebHookService {
                     List<Sheet> targetSheets = renameSheets(targetId, combinedName);
 
 
-                    targetSheets.stream()
+                    Sheet sheetToUpdate = targetSheets.stream()
                             .filter(sheet -> sheet.getName().contains("Finanzen"))
                             .findFirst()
-                            .ifPresent(sheetToUpdate -> insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", finalAsp)));
+                            .orElse(null);
+
+                    if (sheetToUpdate != null)
+                        insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
                 }
             }
             ReferenceSheet.setSheet(inputSheetId, inputSheet);
