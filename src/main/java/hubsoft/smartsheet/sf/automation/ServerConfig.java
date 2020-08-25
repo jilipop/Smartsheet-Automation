@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.sf.automation;
+/* package hubsoft.smartsheet.sf.automation;
 
 import org.apache.catalina.Context;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
@@ -25,4 +25,4 @@ public class ServerConfig {
             }
         };
     }
-}
+} */
