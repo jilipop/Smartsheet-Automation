@@ -301,9 +301,9 @@ public class WebHookService {
         );
     }
 
-    public boolean authenticateCallBack(String hmacHeader, String requestBody) {
+    public boolean authenticateCallBack(String hmacHeader, String requestBody, long inputSheetId) {
         try {
-            return hmacHeader.equals(calculateHmac(constants.getSharedSecret(), requestBody));
+            return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
         } catch (GeneralSecurityException ex) {
             System.out.println(ex.getMessage());
             return false;

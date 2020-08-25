@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.InvalidParameterException;
+
 @RestController
 public class WebHookController {
 
@@ -25,33 +27,32 @@ public class WebHookController {
     @PostMapping("/smartsheet")
     public ResponseEntity<String> callbackResponse(HttpEntity<String> httpEntity,
                                                    @RequestHeader(value = "Smartsheet-Hook-Challenge", required = false) String challengeHeader,
-                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader){
+                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader) throws InvalidParameterException {
         final String requestBodyString = httpEntity.getBody();
 
         if (challengeHeader == null){
-            if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString)) {
+            Callback callback;
+            long inputSheetId;
+            try {
+                callback = mapper.readValue(requestBodyString, Callback.class);
+                inputSheetId = callback.getScopeObjectId();
+            } catch (JsonProcessingException e) {
+                System.out.println(e.getMessage());
+                throw new InvalidParameterException("Konnte die Id der Projekte-Tabelle nicht aus dem Callback auslesen.");
+            }
+            if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString, inputSheetId)) {
                 System.out.println("Ein Callback mit falscher Authentifizierung wurde abgelehnt.");
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            } else if (requestBodyString != null && requestBodyString.contains("\"events\":")){
-                try {
-                    EventCallback eventCallback = mapper.readValue(requestBodyString, EventCallback.class);
+            }
+            else if (callback.getEvents() != null){
+                System.out.println("Smartsheet hat Updates gemeldet:");
+                callback.getEvents().forEach(event -> System.out.println(event.getObjectType() + " " + event.getEventType()));
+                System.out.println("Das ist der rohe JSON-String:");
+                System.out.println(requestBodyString);
 
-                    System.out.println("Smartsheet hat Updates gemeldet:");
-                    eventCallback.getEvents().forEach(event -> System.out.println(event.getObjectType() + " " + event.getEventType()));
-                    System.out.println("Das ist der rohe JSON-String:");
-                    System.out.println(requestBodyString);
-
-                    webHookService.processTemplates(eventCallback.getScopeObjectId());
-                } catch (JsonProcessingException e) {
-                    System.out.println(e.getMessage());
-                }
-            } else {
-                try {
-                    StatusChangeCallback statusChangeCallback = mapper.readValue(requestBodyString, StatusChangeCallback.class);
-                    System.out.println("Smartsheet hat eine Änderung des Webhook-Status gesendet: " + statusChangeCallback.getNewWebhookStatus());
-                } catch (JsonProcessingException e) {
-                    System.out.println(e.getMessage());
-                }
+                webHookService.processTemplates(callback.getScopeObjectId());
+            } else if (callback.getNewWebhookStatus() != null){
+                    System.out.println("Smartsheet hat eine Änderung des Webhook-Status gesendet: " + callback.getNewWebhookStatus());
             }
             return new ResponseEntity<>(HttpStatus.OK);
         }

@@ -17,7 +17,7 @@ public class Constants {
     private String sharedSecret2020;
 
     @Value("${constants.ids.input-sheet-2020}")
-    private long inputSheet2020Id;
+    private long inputSheetId2020;
 
     @Value("${constants.ids.template-folder}")
     private long templateFolderId;
@@ -47,18 +47,25 @@ public class Constants {
     private long elevenWorkSpaceId;
 
     private final Map<Id, Long> ids = new HashMap<>();
+    private final Map<Integer, Long> inputSheetIds = new HashMap<>();
+    private final Map<Long, String> sharedSecrets = new HashMap<>();
 
     public String getAccessToken() {
         return accessToken;
     }
 
-    public String getSharedSecret() {
-        return sharedSecret2020;
+    public Map<Long, String> getSharedSecrets() {
+        if (sharedSecrets.size() == 0){
+            sharedSecrets.put(inputSheetId2020, sharedSecret2020);
+        }
+        return sharedSecrets;
     }
 
-    public long getInputSheetId() {
-
-        return inputSheet2020Id;
+    public Map<Integer, Long> getInputSheetIds() {
+        if (inputSheetIds.size() == 0) {
+            inputSheetIds.put(2020, inputSheetId2020);
+        }
+        return inputSheetIds;
     }
 
     public Map<Id, Long> getIds() {

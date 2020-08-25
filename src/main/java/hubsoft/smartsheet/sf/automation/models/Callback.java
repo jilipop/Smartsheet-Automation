@@ -2,7 +2,7 @@ package hubsoft.smartsheet.sf.automation.models;
 
 import java.util.List;
 
-public class EventCallback {
+public class Callback {
 
     private String nonce;
     private String timestamp;
@@ -10,6 +10,7 @@ public class EventCallback {
     private String scope;
     private Long scopeObjectId;
     private List<Event> events;
+    public String newWebhookStatus;
 
     public String getNonce() {
         return nonce;
@@ -57,5 +58,13 @@ public class EventCallback {
 
     public void setEvents(List<Event> events) {
         this.events = events;
+    }
+
+    public String getNewWebhookStatus() {
+        return newWebhookStatus;
+    }
+
+    public void setNewWebhookStatus(String newWebhookStatus) {
+        this.newWebhookStatus = newWebhookStatus;
     }
 }

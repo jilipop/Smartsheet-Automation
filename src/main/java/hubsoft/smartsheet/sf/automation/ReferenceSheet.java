@@ -30,12 +30,15 @@ public class ReferenceSheet implements CommandLineRunner{
 
     @Override
     public void run(String... args){
-        save();
+        LocalDate date = LocalDate.now();
+        int currentYear = date.getYear();
+        long inputSheetId = constants.getInputSheetIds().get(currentYear);
+        save(inputSheetId);
     }
 
-    private void save(){
+    private void save(long inputSheetId){
         try {
-            sheet = smartsheet.sheetResources().getSheet(constants.getInputSheetId(), null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
+            sheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
             System.out.println(sheet.getRows().size() + " Zeilen aus der Datei " + sheet.getName() + " geladen.");
         } catch (SmartsheetException e) {
             System.out.println(e.getMessage());
