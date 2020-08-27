@@ -316,7 +316,6 @@ public class WebHookService {
             if (targetCell != null) {
                 targetCell.setOverrideValidation(true);
                 targetCell.setValue(value);
-                targetCell.setOverrideValidation(true);
                 cellsToUpdate.add(targetCell);
             }
         });
