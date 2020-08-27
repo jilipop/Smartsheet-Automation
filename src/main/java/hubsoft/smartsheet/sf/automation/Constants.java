@@ -15,17 +15,16 @@ public class Constants {
     @Value("${constants.access-token}")
     private String accessToken;
 
-    @Value("${constants.shared-secret-2020}")
+    @Value("${constants.shared-secret.2020}")
     private String sharedSecret2020;
 
-    @Value("${constants.shared-secret-2021}")
+    @Value("${constants.shared-secret.2021}")
     private String sharedSecret2021;
 
-
-    @Value("${constants.ids.input-sheet-2020}")
+    @Value("${constants.ids.input-sheet.2020}")
     private long inputSheetId2020;
 
-    @Value("${constants.ids.input-sheet-2021}")
+    @Value("${constants.ids.input-sheet.2021}")
     private long inputSheetId2021;
 
     @Value("${constants.ids.template-folder}")

@@ -71,6 +71,11 @@ public class WebHookService {
                 if (aspCell != null && aspCell.getDisplayValue() != null)
                     asp = aspCell.getDisplayValue();
 
+                String agency = "";
+                Cell agencyCell = cells.get(ColName.AGENTUR);
+                if (agencyCell != null && agencyCell.getDisplayValue() != null)
+                    agency = agencyCell.getDisplayValue();
+
                 String combinedName = combineName(jobNumber, clientName, projectName);
 
                 try {
@@ -84,7 +89,18 @@ public class WebHookService {
                 long targetId;
                 if (newCheckmark(row, cells.get(ColName.TIMING))) {
                     targetId = isMaedchenFilmWorkSpace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
-                    copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
+                    Sheet timingSheet = copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
+
+                    if (timingSheet != null) {
+                        timingSheet = loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
+                        Row row1 = updateRow(timingSheet, 0, Map.of("Phase", projectName));
+                        Row row2 = updateRow(timingSheet, 1, Map.of("Phase", jobNumber));
+                        Row row3 = updateRow(timingSheet, 2, Map.of("Phase", clientName));
+                        Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + agency));
+                        Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + asp));
+                        insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
+                    }
+
                 }
                 if (newCheckmark(row, cells.get(ColName.SHOTLIST))) {
                     targetId = isMaedchenFilmWorkSpace ? ids.get(Id.SHOTLIST_WORKSPACE_MF) : ids.get(Id.SHOTLIST_WORKSPACE_ELEVEN);
@@ -95,14 +111,16 @@ public class WebHookService {
 
                     List<Sheet> targetSheets = renameSheets(targetId, combinedName);
 
-
-                    Sheet sheetToUpdate = targetSheets.stream()
+                    Sheet finanzSheet = targetSheets.stream()
                             .filter(sheet -> sheet.getName().contains("Finanzen"))
                             .findFirst()
                             .orElse(null);
 
-                    if (sheetToUpdate != null)
-                        insertDataIntoFirstRow(sheetToUpdate, Map.of("Position", projectName, "Empfänger", asp));
+                    if (finanzSheet != null){
+                        finanzSheet = loadSheetWithRelevantRows(finanzSheet, Set.of(1));
+                        Row firstRow = updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
+                        insertRowsIntoSheet(finanzSheet, List.of(firstRow));
+                    }
                 }
             }
             ReferenceSheet.setSheet(inputSheetId, inputSheet);
@@ -147,6 +165,7 @@ public class WebHookService {
                 "Label", ColName.LABEL,
                 "Projektname", ColName.PROJEKT,
                 "ASP", ColName.ASP,
+                "Agentur", ColName.AGENTUR,
                 "KV", ColName.KV,
                 "T", ColName.TIMING,
                 "SL", ColName.SHOTLIST);
@@ -251,56 +270,12 @@ public class WebHookService {
         return templateSheets;
     }
 
-    private void insertDataIntoFirstRow(Sheet sheetToUpdate, Map<String, String> cellData) {
-        try {
-            sheetToUpdate = smartsheet.sheetResources().getSheet(
-                    sheetToUpdate.getId(),
-                    null,
-                    null,
-                    null,
-                    Set.of(1),
-                    null,
-                    null,
-                    null
-            );
-            Row rowToUpdate = sheetToUpdate.getRows().get(0);
-            List<Cell> cellsToUpdate = new ArrayList<>();
-
-            Map <String, Long> newColumnMap = new HashMap<>();
-            for (Column column: sheetToUpdate.getColumns())
-                newColumnMap.put(column.getTitle(), column.getId());
-
-            Sheet finalSheetToUpdate = sheetToUpdate;
-            cellData.forEach((columnTitle, value) -> {
-                Cell targetCell = rowToUpdate.getCells().stream()
-                        .filter(cell -> cell.getColumnId().equals(newColumnMap.get(columnTitle)))
-                        .findFirst()
-                        .orElse(null);
-                if (targetCell != null) {
-                    targetCell.setValue(value);
-                    cellsToUpdate.add(targetCell);
-                }
-            });
-            Row newRow = new Row();
-            newRow.setId(rowToUpdate.getId());
-            newRow.setCells(cellsToUpdate);
-
-            smartsheet.sheetResources().rowResources().updateRows(
-                    finalSheetToUpdate.getId(),
-                    List.of(newRow)
-            );
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            System.out.println("Projektname und Empfänger konnten nicht eingetragen werden.");
-        }
-    }
-
-    private void copySheetToWorkspace(long sheetId, long targetWorkspaceId, String combinedName, String nameAppendix) throws SmartsheetException {
+    private Sheet copySheetToWorkspace(long sheetId, long targetWorkspaceId, String combinedName, String nameAppendix) throws SmartsheetException {
         Sheet sheet = new Sheet();
         sheet.setFromId(sheetId);
         sheet.setName(combinedName + "_" + nameAppendix);
 
-        smartsheet.sheetResources().createSheetInWorkspaceFromTemplate(
+        return smartsheet.sheetResources().createSheetInWorkspaceFromTemplate(
                 targetWorkspaceId,
                 sheet,
                 EnumSet.of(
@@ -311,6 +286,55 @@ public class WebHookService {
                         SheetTemplateInclusion.FORMS
                 )
         );
+    }
+    private Sheet loadSheetWithRelevantRows(Sheet sheetToGet, Set<Integer> rowsToRead) throws SmartsheetException {
+        return smartsheet.sheetResources().getSheet(
+                sheetToGet.getId(),
+                null,
+                null,
+                null,
+                rowsToRead,
+                null,
+                null,
+                null
+        );
+    }
+
+    private Row updateRow(Sheet sheetToUpdate, int rowIndex, Map<String, String> cellData) {
+        Row rowToUpdate = sheetToUpdate.getRows().get(rowIndex);
+        List<Cell> cellsToUpdate = new ArrayList<>();
+
+        Map<String, Long> newColumnMap = new HashMap<>();
+        for (Column column : sheetToUpdate.getColumns())
+            newColumnMap.put(column.getTitle(), column.getId());
+
+        cellData.forEach((columnTitle, value) -> {
+            Cell targetCell = rowToUpdate.getCells().stream()
+                    .filter(cell -> cell.getColumnId().equals(newColumnMap.get(columnTitle)))
+                    .findFirst()
+                    .orElse(null);
+            if (targetCell != null) {
+                targetCell.setValue(value);
+                cellsToUpdate.add(targetCell);
+            }
+        });
+        Row newRow = new Row();
+        newRow.setId(rowToUpdate.getId());
+        newRow.setCells(cellsToUpdate);
+
+        return newRow;
+    }
+
+    private void insertRowsIntoSheet(Sheet sheetToUpdate, List<Row> rows){
+        try {
+            smartsheet.sheetResources().rowResources().updateRows(
+                    sheetToUpdate.getId(),
+                    rows
+            );
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            System.out.println("Die Daten konnten nicht in die Tabelle eingetragen werden.");
+        }
     }
 
     public boolean authenticateCallBack(String hmacHeader, String requestBody, long inputSheetId) {

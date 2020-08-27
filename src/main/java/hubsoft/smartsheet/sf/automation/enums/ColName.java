@@ -6,6 +6,7 @@ public enum ColName {
         LABEL,
         PROJEKT,
         ASP,
+        AGENTUR,
         KV,
         TIMING,
         SHOTLIST,
