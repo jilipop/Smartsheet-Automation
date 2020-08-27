@@ -314,7 +314,7 @@ public class WebHookService {
                     .findFirst()
                     .orElse(null);
             if (targetCell != null) {
-                targetCell.setOverrideValidation(true);
+                targetCell.setStrict(false);
                 targetCell.setValue(value);
                 cellsToUpdate.add(targetCell);
             }
