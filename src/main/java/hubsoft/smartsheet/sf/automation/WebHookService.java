@@ -26,7 +26,7 @@ import hubsoft.smartsheet.sf.automation.enums.ColName;
 public class WebHookService {
 
     private final Constants constants;
-    private final Map<Id, Long> ids;
+    private final EnumMap<Id, Long> ids;
     private final Map<String, Long> columnMap = new HashMap<>();
     private final Smartsheet smartsheet;
 
@@ -169,7 +169,7 @@ public class WebHookService {
                 "KV", ColName.KV,
                 "T", ColName.TIMING,
                 "SL", ColName.SHOTLIST);
-        Map <ColName, Cell> cellMap = new HashMap<>();
+        EnumMap <ColName, Cell> cellMap = new EnumMap<>(ColName.class);
         columnMap.forEach((name, id) -> {
             Cell targetCell = row.getCells().stream()
                     .filter(cell -> cell.getColumnId().equals(id))
