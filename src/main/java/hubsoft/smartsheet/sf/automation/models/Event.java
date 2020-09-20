@@ -9,6 +9,14 @@ public class Event {
     private Long columnId;
     private String timestamp;
 
+    public Event() {
+    }
+
+    public Event(String objectType, String eventType) {
+        this.objectType = objectType;
+        this.eventType = eventType;
+    }
+
     public String getObjectType() {
         return objectType;
     }

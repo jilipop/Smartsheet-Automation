@@ -12,6 +12,14 @@ public class Callback {
     private List<Event> events;
     public String newWebhookStatus;
 
+    public Callback() {
+    }
+
+    public Callback(Long scopeObjectId, List<Event> events) {
+        this.scopeObjectId = scopeObjectId;
+        this.events = events;
+    }
+
     public String getNonce() {
         return nonce;
     }

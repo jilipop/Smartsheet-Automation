@@ -4,6 +4,14 @@ public class VerificationRequest {
     public String challenge;
     public Long webhookId;
 
+    public VerificationRequest() {
+    }
+
+    public VerificationRequest(String challenge, Long webhookId) {
+        this.challenge = challenge;
+        this.webhookId = webhookId;
+    }
+
     public String getChallenge() {
         return challenge;
     }
