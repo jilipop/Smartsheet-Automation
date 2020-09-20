@@ -13,11 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.naming.InvalidNameException;
-import java.math.BigInteger;
-import java.security.GeneralSecurityException;
 import java.util.*;
 
 import hubsoft.smartsheet.sf.automation.enums.ColName;
@@ -25,7 +21,6 @@ import hubsoft.smartsheet.sf.automation.enums.ColName;
 @Service
 public class WebHookService {
 
-    private final Constants constants;
     private final EnumMap<Id, Long> ids;
     private final Map<String, Long> columnMap = new HashMap<>();
     private final Smartsheet smartsheet;
@@ -34,7 +29,6 @@ public class WebHookService {
 
     @Autowired
     public WebHookService(Constants constants) {
-        this.constants = constants;
         ids = constants.getIds();
         smartsheet = new SmartsheetBuilder()
                 .setAccessToken(constants.getAccessToken())
@@ -336,25 +330,5 @@ public class WebHookService {
             System.out.println(ex.getMessage());
             System.out.println("Die Daten konnten nicht in die Tabelle eingetragen werden.");
         }
-    }
-
-    public boolean authenticateCallBack(String hmacHeader, String requestBody, long inputSheetId) {
-        try {
-            return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
-        } catch (GeneralSecurityException ex) {
-            System.out.println(ex.getMessage());
-            return false;
-        }
-    }
-
-    private String calculateHmac(String sharedSecret, String callbackBody) throws GeneralSecurityException {
-        String HMAC_SHA256_ALGORITHM = "HmacSHA256";
-        int HMAC_RADIX = 16;
-
-        Mac mac = Mac.getInstance(HMAC_SHA256_ALGORITHM);
-        mac.init( new SecretKeySpec(sharedSecret.getBytes(), HMAC_SHA256_ALGORITHM));
-
-        byte[]rawHmac = mac.doFinal(callbackBody.getBytes());
-        return new BigInteger(1, rawHmac).toString(HMAC_RADIX);
     }
 }

@@ -16,11 +16,13 @@ import java.security.InvalidParameterException;
 public class WebHookController {
 
     private final WebHookService webHookService;
+    private final CallBackAuthenticator authenticator;
     private final ObjectMapper mapper;
 
     @Autowired
-    public WebHookController(WebHookService webHookService, ObjectMapper mapper) {
+    public WebHookController(WebHookService webHookService, CallBackAuthenticator authenticator, ObjectMapper mapper) {
         this.webHookService = webHookService;
+        this.authenticator = authenticator;
         this.mapper = mapper;
     }
 
@@ -40,7 +42,7 @@ public class WebHookController {
                 System.out.println(e.getMessage());
                 throw new InvalidParameterException("Konnte die Id der Projekte-Tabelle nicht aus dem Callback auslesen.");
             }
-            if (!webHookService.authenticateCallBack(hmacHeader, requestBodyString, inputSheetId)) {
+            if (!authenticator.authenticate(hmacHeader, requestBodyString, inputSheetId)) {
                 System.out.println("Ein Callback mit falscher Authentifizierung wurde abgelehnt.");
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
