@@ -3,9 +3,9 @@ package hubsoft.smartsheet.sf.automation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hubsoft.smartsheet.sf.automation.models.Callback;
 import hubsoft.smartsheet.sf.automation.models.Event;
+import hubsoft.smartsheet.sf.automation.models.HookResponseBody;
 import hubsoft.smartsheet.sf.automation.models.VerificationRequest;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 
 import java.util.List;
 
@@ -62,16 +63,19 @@ public class WebHookControllerTest {
     }
 
     @Test
-    @DisplayName("Verification Request")
+    @DisplayName("Send correct response to verification request")
     public void testVerificationRequest() throws Exception {
+        String challengeString = verificationRequest.getChallenge();
         mockMvc.perform(post("/smartsheet")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(verificationRequest))
-                .header("Smartsheet-Hook-Challenge", verificationRequest.getChallenge())
+                .header("Smartsheet-Hook-Challenge", challengeString)
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(header().string("Smartsheet-Hook-Response", verificationRequest.getChallenge()))
+                .andExpect(header().string("Smartsheet-Hook-Response", challengeString))
+                .andExpect(jsonPath("$.smartsheetHookResponse").value(challengeString))
                 .andExpect(status().isOk());
     }
+
 
     private String asJsonString(final Object obj) {
         try {
