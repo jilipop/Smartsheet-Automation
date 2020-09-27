@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.InvalidParameterException;
-
 @RestController
 public class WebHookController {
 
@@ -29,7 +27,7 @@ public class WebHookController {
     @PostMapping("/smartsheet")
     public ResponseEntity<String> callbackResponse(HttpEntity<String> httpEntity,
                                                    @RequestHeader(value = "Smartsheet-Hook-Challenge", required = false) String challengeHeader,
-                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader) throws InvalidParameterException {
+                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader) throws JsonProcessingException {
         final String requestBodyString = httpEntity.getBody();
 
         if (challengeHeader == null){
@@ -39,8 +37,8 @@ public class WebHookController {
                 callback = mapper.readValue(requestBodyString, Callback.class);
                 inputSheetId = callback.getScopeObjectId();
             } catch (JsonProcessingException e) {
-                System.out.println(e.getMessage());
-                throw new InvalidParameterException("Konnte die Id der Projekte-Tabelle nicht aus dem Callback auslesen.");
+                System.out.println("Konnte die Id der Projekte-Tabelle nicht aus dem Callback auslesen.");
+                throw e;
             }
             if (!authenticator.authenticate(hmacHeader, requestBodyString, inputSheetId)) {
                 System.out.println("Ein Callback mit falscher Authentifizierung wurde abgelehnt.");

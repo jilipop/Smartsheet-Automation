@@ -15,6 +15,11 @@ public class Callback {
     public Callback() {
     }
 
+    public Callback(Long scopeObjectId, String newWebhookStatus) {
+        this.newWebhookStatus = newWebhookStatus;
+        this.scopeObjectId = scopeObjectId;
+    }
+
     public Callback(Long scopeObjectId, List<Event> events) {
         this.scopeObjectId = scopeObjectId;
         this.events = events;
