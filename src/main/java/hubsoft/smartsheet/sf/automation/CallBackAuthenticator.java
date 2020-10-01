@@ -18,13 +18,8 @@ public class CallBackAuthenticator {
         this.constants = constants;
     }
 
-    public boolean authenticate(String hmacHeader, String requestBody, long inputSheetId) {
-        try {
-            return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
-        } catch (GeneralSecurityException ex) {
-            System.out.println(ex.getMessage());
-            return false;
-        }
+    public boolean authenticate(String hmacHeader, String requestBody, long inputSheetId) throws GeneralSecurityException {
+        return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
     }
 
     private String calculateHmac(String sharedSecret, String callbackBody) throws GeneralSecurityException {
@@ -32,9 +27,9 @@ public class CallBackAuthenticator {
         int HMAC_RADIX = 16;
 
         Mac mac = Mac.getInstance(HMAC_SHA256_ALGORITHM);
-        mac.init( new SecretKeySpec(sharedSecret.getBytes(), HMAC_SHA256_ALGORITHM));
+        mac.init(new SecretKeySpec(sharedSecret.getBytes(), HMAC_SHA256_ALGORITHM));
 
-        byte[]rawHmac = mac.doFinal(callbackBody.getBytes());
+        byte[] rawHmac = mac.doFinal(callbackBody.getBytes());
         return new BigInteger(1, rawHmac).toString(HMAC_RADIX);
     }
 }

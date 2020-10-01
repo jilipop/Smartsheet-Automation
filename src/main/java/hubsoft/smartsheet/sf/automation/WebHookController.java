@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.GeneralSecurityException;
+
 @RestController
 public class WebHookController {
 
@@ -27,7 +29,7 @@ public class WebHookController {
     @PostMapping("/smartsheet")
     public ResponseEntity<String> callbackResponse(HttpEntity<String> httpEntity,
                                                    @RequestHeader(value = "Smartsheet-Hook-Challenge", required = false) String challengeHeader,
-                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader) throws JsonProcessingException {
+                                                   @RequestHeader(value = "Smartsheet-Hmac-SHA256", required = false) String hmacHeader) throws JsonProcessingException, GeneralSecurityException {
         final String requestBodyString = httpEntity.getBody();
 
         if (challengeHeader == null){

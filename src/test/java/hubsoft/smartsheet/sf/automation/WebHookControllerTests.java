@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class WebHookControllerTest {
+public class WebHookControllerTests {
 
     private static Callback eventCallBack;
     private static Callback statusChangeCallBack;
@@ -44,7 +44,7 @@ public class WebHookControllerTest {
     private CallBackAuthenticator mockAuthenticator;
 
     @Autowired
-    public WebHookControllerTest(MockMvc mockMvc) {
+    public WebHookControllerTests(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
     }
 
