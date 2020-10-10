@@ -1,4 +1,4 @@
-package hubsoft.smartsheet.sf.automation;
+package hubsoft.smartsheet.sf.automation.configuration;
 
 import org.apache.catalina.Context;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
