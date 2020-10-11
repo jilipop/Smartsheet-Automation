@@ -5,6 +5,7 @@ import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.*;
 import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
+import com.smartsheet.api.models.enums.ObjectExclusion;
 import com.smartsheet.api.models.enums.SheetTemplateInclusion;
 import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,15 +14,24 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class SmartsheetApiOperations {
+public class SmartsheetRepository {
 
     private final Smartsheet smartsheet;
     private final EnumMap<Id, Long> ids;
 
     @Autowired
-    public SmartsheetApiOperations(Constants constants, Smartsheet smartsheet) {
+    public SmartsheetRepository(Constants constants, Smartsheet smartsheet) {
         ids = constants.getIds();
         this.smartsheet = smartsheet;
+    }
+
+    public Sheet getInputSheet(long inputSheetId) throws SmartsheetException {
+        Sheet inputSheet = smartsheet.sheetResources().getSheet(inputSheetId,
+                null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS),
+                null, null, null,
+                null, null);
+        System.out.println(inputSheet.getTotalRowCount() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
+        return inputSheet;
     }
 
     public Folder copyFolder(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
@@ -95,32 +105,6 @@ public class SmartsheetApiOperations {
                 null,
                 null
         );
-    }
-
-    public Row updateRow(Sheet sheetToUpdate, int rowIndex, Map<String, String> cellData) {
-        Row rowToUpdate = sheetToUpdate.getRows().get(rowIndex);
-        List<Cell> cellsToUpdate = new ArrayList<>();
-
-        Map<String, Long> newColumnMap = new HashMap<>();
-        for (Column column : sheetToUpdate.getColumns())
-            newColumnMap.put(column.getTitle(), column.getId());
-
-        cellData.forEach((columnTitle, value) -> {
-            Cell targetCell = rowToUpdate.getCells().stream()
-                    .filter(cell -> cell.getColumnId().equals(newColumnMap.get(columnTitle)))
-                    .findFirst()
-                    .orElse(null);
-            if (targetCell != null) {
-                targetCell.setStrict(false);
-                targetCell.setValue(value);
-                cellsToUpdate.add(targetCell);
-            }
-        });
-        Row newRow = new Row();
-        newRow.setId(rowToUpdate.getId());
-        newRow.setCells(cellsToUpdate);
-
-        return newRow;
     }
 
     public void insertRowsIntoSheet(Sheet sheetToUpdate, List<Row> rows){

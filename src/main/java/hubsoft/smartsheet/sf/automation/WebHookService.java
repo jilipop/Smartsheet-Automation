@@ -1,8 +1,6 @@
 package hubsoft.smartsheet.sf.automation;
 
-import com.smartsheet.api.Smartsheet;
 import com.smartsheet.api.models.*;
-import com.smartsheet.api.models.enums.ObjectExclusion;
 import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,23 +16,19 @@ public class WebHookService {
 
     private final EnumMap<Id, Long> ids;
     private final Map<String, Long> columnMap = new HashMap<>();
-    private final Smartsheet smartsheet;
-    private final SmartsheetApiOperations apiDo;
+    private final SmartsheetRepository repository;
 
     private Sheet referenceSheet;
 
     @Autowired
-    public WebHookService(Constants constants, Smartsheet smartsheet, SmartsheetApiOperations apiDo) {
+    public WebHookService(Constants constants, SmartsheetRepository repository) {
         ids = constants.getIds();
-        this.smartsheet = smartsheet;
-        this.apiDo = apiDo;
+        this.repository = repository;
     }
 
     public void processTemplates(long inputSheetId) {
         try {
-            Sheet inputSheet = smartsheet.sheetResources().getSheet(inputSheetId, null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS), null, null, null, null, null);
-            System.out.println(inputSheet.getRows().size() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
-
+            Sheet inputSheet = repository.getInputSheet(inputSheetId);
             referenceSheet = ReferenceSheets.getSheet(inputSheetId);
 
             for (Column column: inputSheet.getColumns())
@@ -78,27 +72,27 @@ public class WebHookService {
                 long targetId;
                 if (newCheckmark(row, cells.get(ColName.TIMING))) {
                     targetId = isMaedchenFilmWorkSpace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
-                    Sheet timingSheet = apiDo.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
+                    Sheet timingSheet = repository.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
 
                     if (timingSheet != null) {
-                        timingSheet = apiDo.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
-                        Row row1 = apiDo.updateRow(timingSheet, 0, Map.of("Phase", projectName));
-                        Row row2 = apiDo.updateRow(timingSheet, 1, Map.of("Phase", jobNumber));
-                        Row row3 = apiDo.updateRow(timingSheet, 2, Map.of("Phase", clientName));
-                        Row row4 = apiDo.updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + agency));
-                        Row row5 = apiDo.updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + asp));
-                        apiDo.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
+                        timingSheet = repository.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
+                        Row row1 = updateRow(timingSheet, 0, Map.of("Phase", projectName));
+                        Row row2 = updateRow(timingSheet, 1, Map.of("Phase", jobNumber));
+                        Row row3 = updateRow(timingSheet, 2, Map.of("Phase", clientName));
+                        Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + agency));
+                        Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + asp));
+                        repository.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
                     }
 
                 }
                 if (newCheckmark(row, cells.get(ColName.SHOTLIST))) {
                     targetId = isMaedchenFilmWorkSpace ? ids.get(Id.SHOTLIST_WORKSPACE_MF) : ids.get(Id.SHOTLIST_WORKSPACE_ELEVEN);
-                    apiDo.copySheetToWorkspace(ids.get(Id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
+                    repository.copySheetToWorkspace(ids.get(Id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
                 }
                 if (newCheckmark(row, cells.get(ColName.KV))) {
-                    targetId = apiDo.copyFolder(getTargetWorkSpaceId(cells.get(ColName.LABEL)), combinedName).getId();
+                    targetId = repository.copyFolder(getTargetWorkSpaceId(cells.get(ColName.LABEL)), combinedName).getId();
 
-                    List<Sheet> targetSheets = apiDo.renameSheets(targetId, combinedName);
+                    List<Sheet> targetSheets = repository.renameSheets(targetId, combinedName);
 
                     Sheet finanzSheet = targetSheets.stream()
                             .filter(sheet -> sheet.getName().contains("Finanzen"))
@@ -106,9 +100,9 @@ public class WebHookService {
                             .orElse(null);
 
                     if (finanzSheet != null){
-                        finanzSheet = apiDo.loadSheetWithRelevantRows(finanzSheet, Set.of(1));
-                        Row firstRow = apiDo.updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
-                        apiDo.insertRowsIntoSheet(finanzSheet, List.of(firstRow));
+                        finanzSheet = repository.loadSheetWithRelevantRows(finanzSheet, Set.of(1));
+                        Row firstRow = updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
+                        repository.insertRowsIntoSheet(finanzSheet, List.of(firstRow));
                     }
                 }
             }
@@ -216,5 +210,30 @@ public class WebHookService {
         } else throw new InvalidNameException("Da das Label weder \"Mädchenfilm\" noch \"Eleven\" ist, hätte diese Zeile eigentlich übersprungen werden sollen. Das hat aber offenbar nicht geklappt.");
     }
 
+    public Row updateRow(Sheet sheetToUpdate, int rowIndex, Map<String, String> cellData) {
+        Row rowToUpdate = sheetToUpdate.getRows().get(rowIndex);
+        List<Cell> cellsToUpdate = new ArrayList<>();
+
+        Map<String, Long> newColumnMap = new HashMap<>();
+        for (Column column : sheetToUpdate.getColumns())
+            newColumnMap.put(column.getTitle(), column.getId());
+
+        cellData.forEach((columnTitle, value) -> {
+            Cell targetCell = rowToUpdate.getCells().stream()
+                    .filter(cell -> cell.getColumnId().equals(newColumnMap.get(columnTitle)))
+                    .findFirst()
+                    .orElse(null);
+            if (targetCell != null) {
+                targetCell.setStrict(false);
+                targetCell.setValue(value);
+                cellsToUpdate.add(targetCell);
+            }
+        });
+        Row newRow = new Row();
+        newRow.setId(rowToUpdate.getId());
+        newRow.setCells(cellsToUpdate);
+
+        return newRow;
+    }
 
 }

@@ -8,12 +8,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class SmartSheetBeanConfig {
+public class SmartsheetRepositoryConfig {
 
     private final Constants constants;
 
     @Autowired
-    public SmartSheetBeanConfig(Constants constants) {
+    public SmartsheetRepositoryConfig(Constants constants) {
         this.constants = constants;
     }
 

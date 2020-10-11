@@ -1,7 +1,5 @@
 package hubsoft.smartsheet.sf.automation;
 
-import com.smartsheet.api.SheetResources;
-import com.smartsheet.api.Smartsheet;
 import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.Sheet;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,29 +22,26 @@ public class ReferenceSheetTests {
     private static final Constants constants = new Constants();
     private static ReferenceSheets testReferenceSheets;
 
-    private static SheetResources mockSheetResources;
-    private static Smartsheet mockSmartsheet;
+    private static SmartsheetRepository mockRepository;
     private static final Sheet testSheet = new Sheet();
 
     @BeforeAll
     public static void setup() {
-        mockSmartsheet = Mockito.mock(Smartsheet.class);
-        mockSheetResources = Mockito.mock(SheetResources.class);
-        testReferenceSheets = new ReferenceSheets(constants, mockSmartsheet);
+        mockRepository = Mockito.mock(SmartsheetRepository.class);
+        testReferenceSheets = new ReferenceSheets(constants, mockRepository);
         testSheet.setId(123456L);
         testSheet.setName("empty test sheet");
     }
 
     @Test
-    @DisplayName("for each inputSheetId in constants, one sheet is added to map 'sheets'")
+    @DisplayName("for each inputSheetId in constants, one sheet is requested from the repository")
     public void testRun() throws SmartsheetException {
-        Mockito.when(mockSmartsheet.sheetResources()).thenReturn(mockSheetResources);
-        Mockito.when(mockSheetResources.getSheet(anyLong(), isNull(), any(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(testSheet);
+        Mockito.when(mockRepository.getInputSheet(anyLong())).thenReturn(testSheet);
 
         testReferenceSheets.run();
 
         int inputSheetCount = constants.getInputSheetIds().size();
-        Mockito.verify(mockSheetResources, times(inputSheetCount)).getSheet(anyLong(), isNull(), any(), isNull(), isNull(), isNull(), isNull(), isNull());
+        Mockito.verify(mockRepository, times(inputSheetCount)).getInputSheet(anyLong());
     }
 
     @Test
