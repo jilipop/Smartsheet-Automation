@@ -9,11 +9,11 @@ import com.smartsheet.api.models.enums.ObjectExclusion;
 import com.smartsheet.api.models.enums.SheetTemplateInclusion;
 import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.*;
 
-@Component
+@Repository
 public class SmartsheetRepository {
 
     private final Smartsheet smartsheet;
