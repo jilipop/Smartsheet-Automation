@@ -40,7 +40,7 @@ public class ReferenceSheetTests {
     }
 
     @Test
-    @DisplayName("all sheet ids in constants are requested from the repository and all returned sheets are saved in sheets map")
+    @DisplayName("for all sheet ids in constants, sheets with those ids are requested from the repository and saved in sheets map")
     public void testRun() throws SmartsheetException {
         int randomInt = new Random().nextInt();
         for (long sheetId: constants.getInputSheetIds()){
