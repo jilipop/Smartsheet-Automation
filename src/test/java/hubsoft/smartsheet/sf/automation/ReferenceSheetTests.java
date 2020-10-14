@@ -44,13 +44,13 @@ public class ReferenceSheetTests {
     public void testRun() throws SmartsheetException {
         int randomInt = new Random().nextInt();
         for (long sheetId: constants.getInputSheetIds()){
-            Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId + randomInt));
+            Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId - randomInt));
         }
 
         testReferenceSheets.run();
 
         for (long sheetId: constants.getInputSheetIds()){
-            assertThat(ReferenceSheets.getSheet(sheetId).getId()).isEqualTo(sheetId + randomInt);
+            assertThat(ReferenceSheets.getSheet(sheetId).getId()).isEqualTo(sheetId - randomInt);
         }
     }
 
