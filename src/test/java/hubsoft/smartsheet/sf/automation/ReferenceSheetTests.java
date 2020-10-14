@@ -7,41 +7,51 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Random;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.times;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class ReferenceSheetTests {
 
-    private static final Constants constants = new Constants();
-    private static ReferenceSheets testReferenceSheets;
+    private final Constants constants;
+    private final ReferenceSheets testReferenceSheets;
 
     private static SmartsheetRepository mockRepository;
     private static final Sheet testSheet = new Sheet();
 
+    @Autowired
+    public ReferenceSheetTests(Constants constants) {
+        this.constants = constants;
+        testReferenceSheets = new ReferenceSheets(constants, mockRepository);
+    }
+
     @BeforeAll
     public static void setup() {
         mockRepository = Mockito.mock(SmartsheetRepository.class);
-        testReferenceSheets = new ReferenceSheets(constants, mockRepository);
         testSheet.setId(123456L);
         testSheet.setName("empty test sheet");
     }
 
     @Test
-    @DisplayName("for each inputSheetId in constants, one sheet is requested from the repository")
+    @DisplayName("all sheet ids in constants are requested from the repository and all returned sheets are saved in sheets map")
     public void testRun() throws SmartsheetException {
-        Mockito.when(mockRepository.getInputSheet(anyLong())).thenReturn(testSheet);
+        int randomInt = new Random().nextInt();
+        for (long sheetId: constants.getInputSheetIds()){
+            Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId + randomInt));
+        }
 
         testReferenceSheets.run();
 
-        int inputSheetCount = constants.getInputSheetIds().size();
-        Mockito.verify(mockRepository, times(inputSheetCount)).getInputSheet(anyLong());
+        for (long sheetId: constants.getInputSheetIds()){
+            assertThat(ReferenceSheets.getSheet(sheetId).getId()).isEqualTo(sheetId + randomInt);
+        }
     }
 
     @Test
