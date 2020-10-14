@@ -48,8 +48,8 @@ public class ReferenceSheetTests {
     @DisplayName("the getter and the setter work")
     public void testGetterAndSetter(){
         ReferenceSheets.setSheet(testSheet.getId(), testSheet);
-        Sheet testSheet2 = ReferenceSheets.getSheet(testSheet.getId());
+        Sheet returnedSheet = ReferenceSheets.getSheet(testSheet.getId());
 
-        assertThat(testSheet2).isEqualTo(testSheet);
+        assertThat(returnedSheet).isEqualTo(testSheet);
     }
 }
