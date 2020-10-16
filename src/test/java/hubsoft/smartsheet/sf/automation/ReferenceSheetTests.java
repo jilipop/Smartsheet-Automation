@@ -44,7 +44,7 @@ public class ReferenceSheetTests {
 
     @Test
     @Order(1)
-    @DisplayName("before calling run(), the sheets map does not contain any entries matching the sheet ids in constants")
+    @DisplayName("before run(), the sheets map does not contain any entries matching the sheet ids in constants")
     public void testSheetMapContentsBeforeRun() {
         for (long sheetId: constants.getInputSheetIds()){
             assertThat(ReferenceSheets.getSheet(sheetId)).isNull();
@@ -64,7 +64,7 @@ public class ReferenceSheetTests {
 
     @Test
     @Order(3)
-    @DisplayName("after calling run(), the sheets map contains entries for all sheet ids in constants")
+    @DisplayName("after run(), the sheets map contains entries for all sheet ids in constants")
     public void testSheetMapContentsAfterRun() throws SmartsheetException {
         for (long sheetId : constants.getInputSheetIds()) {
             Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId));
