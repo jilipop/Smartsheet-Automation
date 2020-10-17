@@ -1,15 +1,18 @@
 package hubsoft.smartsheet.sf.automation;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.security.GeneralSecurityException;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,17 +21,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 public class CallBackAuthenticatorTests {
 
-    private final CallBackAuthenticator authenticator;
-
+    private CallBackAuthenticator authenticator;
     private static String correctHmacHeader;
     private static String incorrectHmacHeader;
     private static String callbackBody;
     private static long inputSheetId;
+    private static String sharedSecret;
 
-    @Autowired
-    public CallBackAuthenticatorTests(CallBackAuthenticator authenticator) {
-        this.authenticator = authenticator;
-    }
+    @MockBean
+    private Constants mockConstants;
 
     @BeforeAll
     public static void setup(){
@@ -51,12 +52,20 @@ public class CallBackAuthenticatorTests {
                 "    ]\n" +
                 "}";
         inputSheetId = 3781490619246468L;
+        sharedSecret = "8qhuvdiwg87hm0yjnbuxdicv6";
+    }
+
+    @BeforeEach
+    public void resetInstanceAndStubSharedSecret() {
+        authenticator = new CallBackAuthenticator(mockConstants);
+        Mockito.when(mockConstants.getSharedSecrets()).thenReturn(Map.of(inputSheetId, sharedSecret));
     }
 
     @Test
     @DisplayName("Given a request body and a matching shared secret return true")
     public void testSuccessfulAuthentication() throws GeneralSecurityException {
         boolean authenticationResult = authenticator.authenticate(correctHmacHeader, callbackBody, inputSheetId);
+
         assertThat(authenticationResult).isEqualTo(true);
     }
 
@@ -64,6 +73,7 @@ public class CallBackAuthenticatorTests {
     @DisplayName("Given a request body and an incorrect shared secret return false")
     public void testFailingAuthentication() throws GeneralSecurityException {
         boolean authenticationResult = authenticator.authenticate(incorrectHmacHeader, callbackBody, inputSheetId);
+
         assertThat(authenticationResult).isEqualTo(false);
     }
 }
