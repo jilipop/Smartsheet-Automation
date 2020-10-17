@@ -24,7 +24,7 @@ public class ReferenceSheetTests {
 
     private ReferenceSheets testReferenceSheets;
 
-    private final Set<Long> testSheetIds = Set.of(new Random().nextLong(), new Random().nextLong(), new Random().nextLong());
+    private final Set<Long> testIds = Set.of(new Random().nextLong(), new Random().nextLong(), new Random().nextLong());
     private static final Sheet testSheet = new Sheet();
 
     @MockBean
@@ -49,18 +49,18 @@ public class ReferenceSheetTests {
     @Order(1)
     @DisplayName("before run(), the sheets map does not contain any entries matching the sheet ids")
     public void testSheetMapContentsBeforeRun() {
-       testSheetIds.forEach(sheetId -> assertThat(ReferenceSheets.getSheet(sheetId)).isNull());
+       testIds.forEach(sheetId -> assertThat(ReferenceSheets.getSheet(sheetId)).isNull());
     }
 
     @Test
     @Order(2)
     @DisplayName("during run() all sheet ids are requested from the repository")
     public void testRepositorySheetRequests() throws SmartsheetException {
-        Mockito.when(mockConstants.getInputSheetIds()).thenReturn(testSheetIds);
+        Mockito.when(mockConstants.getInputSheetIds()).thenReturn(testIds);
 
         testReferenceSheets.run();
 
-        for (long sheetId: testSheetIds) {
+        for (long sheetId: testIds) {
             Mockito.verify(mockRepository).getInputSheet(sheetId);
         }
     }
@@ -69,21 +69,21 @@ public class ReferenceSheetTests {
     @Order(3)
     @DisplayName("after run(), the sheets map contains entries for all sheet ids")
     public void testSheetMapContentsAfterRun() throws SmartsheetException {
-        Mockito.when(mockConstants.getInputSheetIds()).thenReturn(testSheetIds);
-        for (long sheetId : testSheetIds) {
+        Mockito.when(mockConstants.getInputSheetIds()).thenReturn(testIds);
+        for (long sheetId : testIds) {
             Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId));
         }
 
         testReferenceSheets.run();
 
-        for (long sheetId : testSheetIds) {
+        for (long sheetId : testIds) {
             assertThat(ReferenceSheets.getSheet(sheetId).getId()).isEqualTo(sheetId);
         }
     }
 
 
     @Test
-    @DisplayName("an object passed to the setter can then be retrieved through the getter")
+    @DisplayName("an object first passed to the setter can then be retrieved through the getter")
     public void testGetterAndSetter(){
         ReferenceSheets.setSheet(testSheet.getId(), testSheet);
         Sheet returnedSheet = ReferenceSheets.getSheet(testSheet.getId());
