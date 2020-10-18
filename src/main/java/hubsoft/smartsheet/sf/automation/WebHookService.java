@@ -2,7 +2,6 @@ package hubsoft.smartsheet.sf.automation;
 
 import com.smartsheet.api.models.*;
 import hubsoft.smartsheet.sf.automation.enums.Id;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -20,7 +19,6 @@ public class WebHookService {
 
     private Sheet referenceSheet;
 
-    @Autowired
     public WebHookService(Constants constants, SmartsheetRepository repository) {
         ids = constants.getIds();
         this.repository = repository;

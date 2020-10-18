@@ -1,6 +1,5 @@
 package hubsoft.smartsheet.sf.automation;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Mac;
@@ -13,7 +12,6 @@ public class CallBackAuthenticator {
 
     private final Constants constants;
 
-    @Autowired
     public CallBackAuthenticator(Constants constants) {
         this.constants = constants;
     }

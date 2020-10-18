@@ -2,7 +2,6 @@ package hubsoft.smartsheet.sf.automation;
 
 import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.Sheet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -19,7 +18,6 @@ public class ReferenceSheets implements CommandLineRunner{
 
     private final static Map<Long, Sheet> sheets = new HashMap<>();
 
-    @Autowired
     public ReferenceSheets(Constants constants, SmartsheetRepository repository) {
         this.constants = constants;
         this.repository = repository;

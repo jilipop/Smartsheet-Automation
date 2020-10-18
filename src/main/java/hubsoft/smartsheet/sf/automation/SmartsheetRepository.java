@@ -7,7 +7,6 @@ import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
 import com.smartsheet.api.models.enums.ObjectExclusion;
 import com.smartsheet.api.models.enums.SheetTemplateInclusion;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -17,7 +16,6 @@ public class SmartsheetRepository {
 
     private final Smartsheet smartsheet;
 
-    @Autowired
     public SmartsheetRepository(Smartsheet smartsheet) {
         this.smartsheet = smartsheet;
     }

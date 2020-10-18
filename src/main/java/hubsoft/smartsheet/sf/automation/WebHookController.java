@@ -3,7 +3,6 @@ package hubsoft.smartsheet.sf.automation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hubsoft.smartsheet.sf.automation.models.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ public class WebHookController {
     private final CallBackAuthenticator authenticator;
     private final ObjectMapper mapper;
 
-    @Autowired
     public WebHookController(WebHookService webHookService, CallBackAuthenticator authenticator, ObjectMapper mapper) {
         this.webHookService = webHookService;
         this.authenticator = authenticator;
