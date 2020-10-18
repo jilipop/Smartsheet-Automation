@@ -31,14 +31,14 @@ public class SmartsheetRepository {
         return sheet;
     }
 
-    public Folder copyFolderToWorkspace(long targetWorkSpaceId, long templateFolderId, String combinedName) throws SmartsheetException {
+    public Folder copyFolderToWorkspace(long folderId, long workspaceId, String name) throws SmartsheetException {
         ContainerDestination destination = new ContainerDestination()
                 .setDestinationType(DestinationType.WORKSPACE)
-                .setDestinationId(targetWorkSpaceId)
-                .setNewName(combinedName);
+                .setDestinationId(workspaceId)
+                .setNewName(name);
 
         return smartsheet.folderResources().copyFolder(
-                templateFolderId,
+                folderId,
                 destination,
                 EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
                         FolderCopyInclusion.CELLLINKS,

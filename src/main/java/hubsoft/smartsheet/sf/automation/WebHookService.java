@@ -91,8 +91,8 @@ public class WebHookService {
                 }
                 if (newCheckmark(row, cells.get(ColName.KV))) {
                     targetId = repository.copyFolderToWorkspace(
-                            getTargetWorkSpaceId(cells.get(ColName.LABEL)),
                             ids.get(Id.TEMPLATE_FOLDER),
+                            getTargetWorkSpaceId(cells.get(ColName.LABEL)),
                             combinedName)
                             .getId();
 
