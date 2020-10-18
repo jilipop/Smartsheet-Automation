@@ -61,7 +61,7 @@ public class ReferenceSheetTests {
         testReferenceSheets.run();
 
         for (long sheetId: testIds) {
-            Mockito.verify(mockRepository).getInputSheet(sheetId);
+            Mockito.verify(mockRepository).getSheet(sheetId);
         }
     }
 
@@ -71,7 +71,7 @@ public class ReferenceSheetTests {
     public void testSheetMapContentsAfterRun() throws SmartsheetException {
         Mockito.when(mockConstants.getInputSheetIds()).thenReturn(testIds);
         for (long sheetId : testIds) {
-            Mockito.when(mockRepository.getInputSheet(sheetId)).thenReturn(new Sheet(sheetId));
+            Mockito.when(mockRepository.getSheet(sheetId)).thenReturn(new Sheet(sheetId));
         }
 
         testReferenceSheets.run();

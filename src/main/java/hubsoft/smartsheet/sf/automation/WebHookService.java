@@ -28,7 +28,7 @@ public class WebHookService {
 
     public void processTemplates(long inputSheetId) {
         try {
-            Sheet inputSheet = repository.getInputSheet(inputSheetId);
+            Sheet inputSheet = repository.getSheet(inputSheetId);
             referenceSheet = ReferenceSheets.getSheet(inputSheetId);
 
             for (Column column: inputSheet.getColumns())

@@ -28,7 +28,7 @@ public class ReferenceSheets implements CommandLineRunner{
     @Override
     public void run(String... args) throws SmartsheetException {
         for (long sheetId: constants.getInputSheetIds()) {
-            Sheet sheet = repository.getInputSheet(sheetId);
+            Sheet sheet = repository.getSheet(sheetId);
             sheets.put(sheetId, sheet);
         }
     }
