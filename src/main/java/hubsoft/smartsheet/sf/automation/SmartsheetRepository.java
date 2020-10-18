@@ -34,7 +34,7 @@ public class SmartsheetRepository {
         return sheet;
     }
 
-    public Folder copyFolder(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
+    public Folder copyFolderToWorkspace(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
         ContainerDestination destination = new ContainerDestination()
                 .setDestinationType(DestinationType.WORKSPACE)
                 .setDestinationId(targetWorkSpaceId)

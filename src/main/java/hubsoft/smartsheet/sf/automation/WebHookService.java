@@ -90,7 +90,7 @@ public class WebHookService {
                     repository.copySheetToWorkspace(ids.get(Id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
                 }
                 if (newCheckmark(row, cells.get(ColName.KV))) {
-                    targetId = repository.copyFolder(getTargetWorkSpaceId(cells.get(ColName.LABEL)), combinedName).getId();
+                    targetId = repository.copyFolderToWorkspace(getTargetWorkSpaceId(cells.get(ColName.LABEL)), combinedName).getId();
 
                     List<Sheet> targetSheets = repository.renameSheets(targetId, combinedName);
 
