@@ -23,7 +23,6 @@ import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -79,7 +78,7 @@ public class WebHookControllerTests {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(mockService).processTemplates(eventCallBack.getScopeObjectId());
+        Mockito.verify(mockService).processTemplates(eventCallBack.getScopeObjectId());
     }
 
 
