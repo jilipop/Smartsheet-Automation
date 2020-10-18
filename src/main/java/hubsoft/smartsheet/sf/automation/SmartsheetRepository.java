@@ -7,7 +7,6 @@ import com.smartsheet.api.models.enums.DestinationType;
 import com.smartsheet.api.models.enums.FolderCopyInclusion;
 import com.smartsheet.api.models.enums.ObjectExclusion;
 import com.smartsheet.api.models.enums.SheetTemplateInclusion;
-import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -17,11 +16,9 @@ import java.util.*;
 public class SmartsheetRepository {
 
     private final Smartsheet smartsheet;
-    private final EnumMap<Id, Long> ids;
 
     @Autowired
-    public SmartsheetRepository(Constants constants, Smartsheet smartsheet) {
-        ids = constants.getIds();
+    public SmartsheetRepository(Smartsheet smartsheet) {
         this.smartsheet = smartsheet;
     }
 
@@ -34,14 +31,14 @@ public class SmartsheetRepository {
         return sheet;
     }
 
-    public Folder copyFolderToWorkspace(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
+    public Folder copyFolderToWorkspace(long targetWorkSpaceId, long templateFolderId, String combinedName) throws SmartsheetException {
         ContainerDestination destination = new ContainerDestination()
                 .setDestinationType(DestinationType.WORKSPACE)
                 .setDestinationId(targetWorkSpaceId)
                 .setNewName(combinedName);
 
         return smartsheet.folderResources().copyFolder(
-                ids.get(Id.TEMPLATE_FOLDER),
+                templateFolderId,
                 destination,
                 EnumSet.of(FolderCopyInclusion.ATTACHMENTS,
                         FolderCopyInclusion.CELLLINKS,
