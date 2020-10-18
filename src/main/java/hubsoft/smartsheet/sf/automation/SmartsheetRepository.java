@@ -25,13 +25,13 @@ public class SmartsheetRepository {
         this.smartsheet = smartsheet;
     }
 
-    public Sheet getInputSheet(long inputSheetId) throws SmartsheetException {
-        Sheet inputSheet = smartsheet.sheetResources().getSheet(inputSheetId,
+    public Sheet getSheet(long sheetId) throws SmartsheetException {
+        Sheet sheet = smartsheet.sheetResources().getSheet(sheetId,
                 null, EnumSet.of(ObjectExclusion.NONEXISTENT_CELLS),
                 null, null, null,
                 null, null);
-        System.out.println(inputSheet.getTotalRowCount() + " Zeilen aus der Datei " + inputSheet.getName() + " geladen.");
-        return inputSheet;
+        System.out.println(sheet.getTotalRowCount() + " Zeilen aus der Datei " + sheet.getName() + " geladen.");
+        return sheet;
     }
 
     public Folder copyFolder(long targetWorkSpaceId, String combinedName) throws SmartsheetException {
