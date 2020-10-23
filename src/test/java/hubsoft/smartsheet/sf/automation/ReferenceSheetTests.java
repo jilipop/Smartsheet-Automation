@@ -4,35 +4,31 @@ import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.Sheet;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
-
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Random;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ReferenceSheetTests {
-
-    private ReferenceSheets testReferenceSheets;
 
     private final Set<Long> testIds = Set.of(new Random().nextLong(), new Random().nextLong(), new Random().nextLong());
     private static final Sheet testSheet = new Sheet();
 
-    @MockBean
+    @Mock
     private SmartsheetRepository mockRepository;
 
-    @MockBean
+    @Mock
     private Constants mockConstants;
 
+    @InjectMocks
+    private ReferenceSheets testReferenceSheets;
 
     @BeforeAll
     public static void setup() {

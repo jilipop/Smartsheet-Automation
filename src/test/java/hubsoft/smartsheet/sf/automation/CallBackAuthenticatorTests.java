@@ -5,31 +5,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.security.GeneralSecurityException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 public class CallBackAuthenticatorTests {
 
-    private CallBackAuthenticator authenticator;
     private static String correctHmacHeader;
     private static String incorrectHmacHeader;
     private static String callbackBody;
     private static long inputSheetId;
     private static String sharedSecret;
 
-    @MockBean
+    @Mock
     private Constants mockConstants;
+
+    @InjectMocks
+    private CallBackAuthenticator authenticator;
 
     @BeforeAll
     public static void setup(){
