@@ -6,18 +6,18 @@ import hubsoft.smartsheet.sf.automation.models.Callback;
 import hubsoft.smartsheet.sf.automation.models.Event;
 import hubsoft.smartsheet.sf.automation.models.VerificationRequest;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
@@ -26,9 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
-@AutoConfigureMockMvc
+@ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 public class WebHookControllerTests {
 
@@ -36,21 +34,19 @@ public class WebHookControllerTests {
     private static Callback statusChangeCallBack;
     private static VerificationRequest verificationRequest;
 
-    private final MockMvc mockMvc;
+    private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private WebHookService mockService;
 
-    @MockBean
+    @Mock
     private CallBackAuthenticator mockAuthenticator;
 
-    @Autowired
-    public WebHookControllerTests(MockMvc mockMvc) {
-        this.mockMvc = mockMvc;
-    }
+    @InjectMocks
+    private WebHookController controller;
 
     @BeforeAll
-    public static void setup(){
+    public static void setupObjects(){
         verificationRequest = new VerificationRequest(
                 "d78dd1d3-01ce-4481-81de-92b4f3aa5ab1",
                 2674017481058180L
@@ -65,6 +61,13 @@ public class WebHookControllerTests {
                 4509506114742148L,
                 "DISABLED_SCOPE_INACCESSIBLE"
         );
+    }
+
+    @BeforeEach
+    public void setupSutAndMockMvc() {
+        WebHookController controller = new WebHookController(mockService, mockAuthenticator, new ObjectMapper());
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .build();
     }
 
     @Test
@@ -109,7 +112,7 @@ public class WebHookControllerTests {
     @Test
     @DisplayName("When authentication fails, return 403")
     public void testAuthenticationFailure() throws Exception {
-        Mockito.when(mockAuthenticator.authenticate(anyString(), anyString(), anyLong())).thenReturn(false);
+        Mockito.when(mockAuthenticator.authenticate(any(), any(), anyLong())).thenReturn(false);
 
         mockMvc.perform(post("/smartsheet")
                 .contentType(MediaType.APPLICATION_JSON)
