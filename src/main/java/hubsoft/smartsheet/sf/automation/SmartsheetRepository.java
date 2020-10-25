@@ -102,15 +102,16 @@ public class SmartsheetRepository {
         );
     }
 
-    public void insertRowsIntoSheet(Sheet sheetToUpdate, List<Row> rows){
+    public List<Row> insertRowsIntoSheet(Sheet sheetToUpdate, List<Row> rows){
         try {
-            smartsheet.sheetResources().rowResources().updateRows(
+            return smartsheet.sheetResources().rowResources().updateRows(
                     sheetToUpdate.getId(),
                     rows
             );
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
             System.out.println("Die Daten konnten nicht in die Tabelle eingetragen werden.");
+            return null;
         }
     }
 }
