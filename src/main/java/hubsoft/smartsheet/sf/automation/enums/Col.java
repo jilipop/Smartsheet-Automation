@@ -1,6 +1,6 @@
 package hubsoft.smartsheet.sf.automation.enums;
 
-public enum ColName {
+public enum Col {
         JOB_NR,
         KUNDE,
         LABEL,
