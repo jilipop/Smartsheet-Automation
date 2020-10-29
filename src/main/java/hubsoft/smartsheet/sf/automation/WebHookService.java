@@ -1,14 +1,14 @@
 package hubsoft.smartsheet.sf.automation;
 
+import com.smartsheet.api.SmartsheetException;
 import com.smartsheet.api.models.*;
 import hubsoft.smartsheet.sf.automation.enums.Id;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.naming.InvalidNameException;
 import java.util.*;
 
-import hubsoft.smartsheet.sf.automation.enums.ColName;
+import hubsoft.smartsheet.sf.automation.enums.Col;
 
 @Service
 public class WebHookService {
@@ -33,81 +33,9 @@ public class WebHookService {
                 columnMap.put(column.getTitle(), column.getId());
 
             Set<Row> rowsToProcess = getRowsToProcess(inputSheet.getRows());
-            for (Row row: rowsToProcess) {
-                Map<ColName, Cell> cells = buildCellMap(row);
+            for (Row row: rowsToProcess)
+                processRow(row);
 
-                String jobNumber, clientName, projectName;
-                try {
-                    jobNumber = cells.get(ColName.JOB_NR).getDisplayValue();
-                    clientName = cells.get(ColName.KUNDE).getDisplayValue();
-                    projectName = cells.get(ColName.PROJEKT).getDisplayValue();
-                    if (!(StringUtils.hasText(jobNumber) && StringUtils.hasText(clientName) && StringUtils.hasText(projectName)))
-                        throw new Exception();
-                } catch (Exception ex) {
-                    throw new Exception("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
-                }
-
-                String asp = "";
-                Cell aspCell = cells.get(ColName.ASP);
-                if (aspCell != null && aspCell.getDisplayValue() != null)
-                    asp = aspCell.getDisplayValue();
-
-                String agency = "";
-                Cell agencyCell = cells.get(ColName.AGENTUR);
-                if (agencyCell != null && agencyCell.getDisplayValue() != null)
-                    agency = agencyCell.getDisplayValue();
-
-                String combinedName = combineName(jobNumber, clientName, projectName);
-
-                try {
-                    getTargetWorkSpaceId(cells.get(ColName.LABEL));
-                } catch (Exception ex) {
-                    System.out.println("Überspringe Tabellenzeile, weil das Label weder \"Mädchenfilm\" noch \"Eleven\" ist.");
-                    continue;
-                }
-                boolean isMaedchenFilmWorkSpace = getTargetWorkSpaceId(cells.get(ColName.LABEL)) == ids.get(Id.MF_WORKSPACE);
-
-                long targetId;
-                if (newCheckmark(row, cells.get(ColName.TIMING))) {
-                    targetId = isMaedchenFilmWorkSpace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
-                    Sheet timingSheet = repository.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
-
-                    if (timingSheet != null) {
-                        timingSheet = repository.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
-                        Row row1 = updateRow(timingSheet, 0, Map.of("Phase", projectName));
-                        Row row2 = updateRow(timingSheet, 1, Map.of("Phase", jobNumber));
-                        Row row3 = updateRow(timingSheet, 2, Map.of("Phase", clientName));
-                        Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + agency));
-                        Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + asp));
-                        repository.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
-                    }
-
-                }
-                if (newCheckmark(row, cells.get(ColName.SHOTLIST))) {
-                    targetId = isMaedchenFilmWorkSpace ? ids.get(Id.SHOTLIST_WORKSPACE_MF) : ids.get(Id.SHOTLIST_WORKSPACE_ELEVEN);
-                    repository.copySheetToWorkspace(ids.get(Id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
-                }
-                if (newCheckmark(row, cells.get(ColName.KV))) {
-                    targetId = repository.copyFolderToWorkspace(
-                            ids.get(Id.TEMPLATE_FOLDER),
-                            getTargetWorkSpaceId(cells.get(ColName.LABEL)),
-                            combinedName)
-                            .getId();
-
-                    List<Sheet> targetSheets = repository.renameSheets(targetId, combinedName);
-
-                    Sheet finanzSheet = targetSheets.stream()
-                            .filter(sheet -> sheet.getName().contains("Finanzen"))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (finanzSheet != null){
-                        finanzSheet = repository.loadSheetWithRelevantRows(finanzSheet, Set.of(1));
-                        Row firstRow = updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
-                        repository.insertRowsIntoSheet(finanzSheet, List.of(firstRow));
-                    }
-                }
-            }
             ReferenceSheets.setSheet(inputSheetId, inputSheet);
             System.out.println("Aktualisierung abgeschlossen.");
         } catch (Exception ex) {
@@ -134,6 +62,91 @@ public class WebHookService {
         return rowsToProcess;
     }
 
+    private void processRow(Row row) throws Exception {
+        Map<Col, Cell> cells = buildCellMap(row);
+        Map<Col, String> cellEntries = getCellEntries(cells);
+
+        if (!(StringUtils.hasText(cellEntries.get(Col.JOB_NR))
+                && StringUtils.hasText(cellEntries.get(Col.KUNDE))
+                && StringUtils.hasText(cellEntries.get(Col.PROJEKT))))
+            throw new Exception("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
+
+        String combinedName = combineName(cellEntries.get(Col.JOB_NR), cellEntries.get(Col.KUNDE), cellEntries.get(Col.PROJEKT));
+
+        Long targetWorkspaceId = getTargetWorkSpaceId(cells.get(Col.LABEL));
+        if (targetWorkspaceId == null) {
+            System.out.println("Überspringe Tabellenzeile, weil das Label weder \"Mädchenfilm\" noch \"Eleven\" ist.");
+            return;
+        }
+
+        boolean isMfWorkspace = targetWorkspaceId.equals(ids.get(Id.MF_WORKSPACE));
+
+        if (newCheckmark(row, cells.get(Col.TIMING)))
+            handleTimingCheckMark(isMfWorkspace, combinedName, cellEntries);
+
+        if (newCheckmark(row, cells.get(Col.SHOTLIST))) {
+            long targetId = isMfWorkspace ? ids.get(Id.SHOTLIST_WORKSPACE_MF) : ids.get(Id.SHOTLIST_WORKSPACE_ELEVEN);
+            repository.copySheetToWorkspace(ids.get(Id.SHOTLIST_TEMPLATE), targetId, combinedName, "Shotlist");
+        }
+
+        if (newCheckmark(row, cells.get(Col.KV)))
+            handleKvCheckMark(targetWorkspaceId, combinedName, cellEntries.get(Col.PROJEKT), cellEntries.get(Col.ASP));
+    }
+
+    private Map<Col, String> getCellEntries(Map<Col, Cell> cells){
+        Map<Col, String> cellEntries = new HashMap<>();
+
+        cellEntries.put(Col.JOB_NR, getStringFromCell(cells.get(Col.JOB_NR)));
+        cellEntries.put(Col.KUNDE, getStringFromCell(cells.get(Col.KUNDE)));
+        cellEntries.put(Col.PROJEKT, getStringFromCell(cells.get(Col.PROJEKT)));
+        cellEntries.put(Col.ASP, getStringFromCell(cells.get(Col.ASP)));
+        cellEntries.put(Col.AGENTUR, getStringFromCell(cells.get(Col.AGENTUR)));
+
+        return cellEntries;
+    }
+
+    private String getStringFromCell(Cell cell){
+        if (cell != null && cell.getDisplayValue() != null)
+            return cell.getDisplayValue();
+        else return "";
+    }
+
+    private void handleTimingCheckMark(boolean isMfWorkspace, String combinedName, Map<Col, String> cellEntries) throws SmartsheetException {
+        long targetId = isMfWorkspace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
+        Sheet timingSheet = repository.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
+
+        if (timingSheet != null) {
+            timingSheet = repository.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
+            Row row1 = updateRow(timingSheet, 0, Map.of("Phase", cellEntries.get(Col.PROJEKT)));
+            Row row2 = updateRow(timingSheet, 1, Map.of("Phase", cellEntries.get(Col.JOB_NR)));
+            Row row3 = updateRow(timingSheet, 2, Map.of("Phase", cellEntries.get(Col.KUNDE)));
+            Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + cellEntries.get(Col.AGENTUR)));
+            Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + cellEntries.get(Col.ASP)));
+            repository.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
+        }
+    }
+
+    private void handleKvCheckMark(Long targetWorkspaceId, String combinedName, String projectName, String asp) throws SmartsheetException {
+        long targetId = repository.copyFolderToWorkspace(
+                ids.get(Id.TEMPLATE_FOLDER),
+                targetWorkspaceId,
+                combinedName)
+                .getId();
+
+        List<Sheet> targetSheets = repository.renameSheets(targetId, combinedName);
+
+        Sheet finanzSheet = targetSheets.stream()
+                .filter(sheet -> sheet.getName().contains("Finanzen"))
+                .findFirst()
+                .orElse(null);
+
+        if (finanzSheet != null){
+            finanzSheet = repository.loadSheetWithRelevantRows(finanzSheet, Set.of(1));
+            Row firstRow = updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
+            repository.insertRowsIntoSheet(finanzSheet, List.of(firstRow));
+        }
+    }
+
     private Cell getCellByColumnTitle(Row row, String columnTitle) {
         Long colId = columnMap.get(columnTitle);
 
@@ -141,29 +154,6 @@ public class WebHookService {
                 .filter(cell -> colId.equals(cell.getColumnId()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private Map<ColName, Cell> buildCellMap(Row row) {
-        final Map<String, ColName> colNames = Map.of(
-                "Job_Nr.", ColName.JOB_NR,
-                "Kunde", ColName.KUNDE,
-                "Label", ColName.LABEL,
-                "Projektname", ColName.PROJEKT,
-                "ASP", ColName.ASP,
-                "Agentur", ColName.AGENTUR,
-                "KV", ColName.KV,
-                "T", ColName.TIMING,
-                "SL", ColName.SHOTLIST);
-        EnumMap <ColName, Cell> cellMap = new EnumMap<>(ColName.class);
-        columnMap.forEach((name, id) -> {
-            Cell targetCell = row.getCells().stream()
-                    .filter(cell -> cell.getColumnId().equals(id))
-                    .findFirst()
-                    .orElse(null);
-            ColName colName = colNames.get(name);
-            cellMap.put(colName, targetCell);
-        });
-        return cellMap;
     }
 
     private boolean newCheckmark(Row row, Cell cell) {
@@ -184,9 +174,32 @@ public class WebHookService {
             return null;
         else
             return referenceRow.getCells().stream()
-                .filter(refCell -> refCell.getColumnId().equals(cell.getColumnId()))
-                .findFirst()
-                .orElse(null);
+                    .filter(refCell -> refCell.getColumnId().equals(cell.getColumnId()))
+                    .findFirst()
+                    .orElse(null);
+    }
+
+    private Map<Col, Cell> buildCellMap(Row row) {
+        final Map<String, Col> colNames = Map.of(
+                "Job_Nr.", Col.JOB_NR,
+                "Kunde", Col.KUNDE,
+                "Label", Col.LABEL,
+                "Projektname", Col.PROJEKT,
+                "ASP", Col.ASP,
+                "Agentur", Col.AGENTUR,
+                "KV", Col.KV,
+                "T", Col.TIMING,
+                "SL", Col.SHOTLIST);
+        EnumMap <Col, Cell> cellMap = new EnumMap<>(Col.class);
+        columnMap.forEach((name, id) -> {
+            Cell targetCell = row.getCells().stream()
+                    .filter(cell -> cell.getColumnId().equals(id))
+                    .findFirst()
+                    .orElse(null);
+            Col col = colNames.get(name);
+            cellMap.put(col, targetCell);
+        });
+        return cellMap;
     }
 
     private String combineName(String jobNumber, String clientName, String projectName){
@@ -204,12 +217,14 @@ public class WebHookService {
         return jobNumber + "_" + clientName + "_" + projectName;
     }
 
-    private long getTargetWorkSpaceId(Cell labelCell) throws InvalidNameException {
-        if (labelCell != null && labelCell.getValue().equals("Mädchenfilm")) {
+    private Long getTargetWorkSpaceId(Cell labelCell) throws NullPointerException {
+        if (labelCell == null || labelCell.getValue() == null)
+            return null;
+        else if (labelCell.getValue().equals("Mädchenfilm"))
             return ids.get(Id.MF_WORKSPACE);
-        } else if (labelCell != null && labelCell.getValue().equals("Eleven")){
+        else if (labelCell.getValue().equals("Eleven"))
             return ids.get(Id.ELEVEN_WORKSPACE);
-        } else throw new InvalidNameException("Da das Label weder \"Mädchenfilm\" noch \"Eleven\" ist, hätte diese Zeile eigentlich übersprungen werden sollen. Das hat aber offenbar nicht geklappt.");
+        else return null;
     }
 
     public Row updateRow(Sheet sheetToUpdate, int rowIndex, Map<String, String> cellData) {
@@ -237,5 +252,4 @@ public class WebHookService {
 
         return newRow;
     }
-
 }
