@@ -94,15 +94,13 @@ public class WebHookService {
     }
 
     private Map<Col, String> getCellEntries(Map<Col, Cell> cells){
-        Map<Col, String> cellEntries = new HashMap<>();
-
-        cellEntries.put(Col.JOB_NR, getStringFromCell(cells.get(Col.JOB_NR)));
-        cellEntries.put(Col.KUNDE, getStringFromCell(cells.get(Col.KUNDE)));
-        cellEntries.put(Col.PROJEKT, getStringFromCell(cells.get(Col.PROJEKT)));
-        cellEntries.put(Col.ASP, getStringFromCell(cells.get(Col.ASP)));
-        cellEntries.put(Col.AGENTUR, getStringFromCell(cells.get(Col.AGENTUR)));
-
-        return cellEntries;
+        return Map.of(
+                Col.JOB_NR, getStringFromCell(cells.get(Col.JOB_NR)),
+                Col.KUNDE, getStringFromCell(cells.get(Col.KUNDE)),
+                Col.PROJEKT, getStringFromCell(cells.get(Col.PROJEKT)),
+                Col.ASP, getStringFromCell(cells.get(Col.ASP)),
+                Col.AGENTUR, getStringFromCell(cells.get(Col.AGENTUR))
+        );
     }
 
     private String getStringFromCell(Cell cell){
