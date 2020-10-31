@@ -38,6 +38,7 @@ public class WebHookService {
 
             ReferenceSheets.setSheet(inputSheetId, inputSheet);
             System.out.println("Aktualisierung abgeschlossen.");
+            System.out.println("In " + rowsToProcess.size() + " Zeile(n) wurden neue Haken gefunden und verarbeitet.");
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
