@@ -42,7 +42,7 @@ public class WebHookController {
             }
             if (!authenticator.authenticate(hmacHeader, requestBodyString, inputSheetId)) {
                 System.out.println("Ein Callback mit falscher Authentifizierung wurde abgelehnt.");
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
             else if (callback.getEvents() != null){
                 System.out.println("Smartsheet hat Updates gemeldet:");

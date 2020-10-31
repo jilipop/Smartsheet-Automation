@@ -121,7 +121,7 @@ public class WebHookControllerTests {
     }
 
     @Test
-    @DisplayName("When authentication fails, return 403")
+    @DisplayName("When authentication fails, return 401")
     public void testAuthenticationFailure() throws Exception {
         Mockito.when(mockMapper.readValue(anyString(), eq(Callback.class))).thenReturn(eventCallBack);
         Mockito.when(mockAuthenticator.authenticate(any(), any(), anyLong())).thenReturn(false);
@@ -130,7 +130,7 @@ public class WebHookControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(eventCallBack))
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
