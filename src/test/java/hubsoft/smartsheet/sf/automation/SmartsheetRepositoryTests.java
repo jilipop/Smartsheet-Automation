@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,14 +48,15 @@ public class SmartsheetRepositoryTests {
         mockFolderResources = Mockito.mock(FolderResources.class);
         mockRowResources = Mockito.mock(SheetRowResources.class);
 
+        Random random = new Random();
         testSheet = new Sheet(new Random().nextLong());
         testSheet.setName("TestSheet-00000_Projekte-00000_Projekt-XXXXX_Projekte-XXXXX_Projekt");
-        testFolder = new Folder(new Random().nextLong());
+        testFolder = new Folder(random.nextLong());
         testFolder.setSheets(List.of(testSheet));
         testWorkSpace = new Workspace();
-        testWorkSpace.setId(new Random().nextLong());
-        testSet = Set.of(1, 8, 15);
-        testRowList = List.of(new Row(new Random().nextLong()), new Row(new Random().nextLong()), new Row(new Random().nextLong()));
+        testWorkSpace.setId(random.nextLong());
+        testSet = Set.of(random.nextInt(), random.nextInt(), random.nextInt());
+        testRowList = List.of(new Row(random.nextLong()), new Row(random.nextLong()), new Row(random.nextLong()));
     }
 
     @Test
