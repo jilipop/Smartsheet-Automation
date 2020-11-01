@@ -70,7 +70,7 @@ public class WebHookService {
         if (!(StringUtils.hasText(cellEntries.get(Col.JOB_NR))
                 && StringUtils.hasText(cellEntries.get(Col.KUNDE))
                 && StringUtils.hasText(cellEntries.get(Col.PROJEKT))))
-            throw new Exception("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
+            throw new NoSuchElementException("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
 
         String combinedName = combineName(cellEntries.get(Col.JOB_NR), cellEntries.get(Col.KUNDE), cellEntries.get(Col.PROJEKT));
 
