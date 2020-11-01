@@ -49,7 +49,7 @@ public class SmartsheetRepositoryTests {
         mockRowResources = Mockito.mock(SheetRowResources.class);
 
         Random random = new Random();
-        testSheet = new Sheet(new Random().nextLong());
+        testSheet = new Sheet(random.nextLong());
         testSheet.setName("TestSheet-00000_Projekte-00000_Projekt-XXXXX_Projekte-XXXXX_Projekt");
         testFolder = new Folder(random.nextLong());
         testFolder.setSheets(List.of(testSheet));
