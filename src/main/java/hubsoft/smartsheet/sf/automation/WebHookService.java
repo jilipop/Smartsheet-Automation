@@ -17,6 +17,8 @@ public class WebHookService {
     private final Map<String, Long> columnMap = new HashMap<>();
     private final SmartsheetRepository repository;
 
+    private int rowSkipCount;
+
     private Sheet referenceSheet;
 
     public WebHookService(Constants constants, SmartsheetRepository repository) {
@@ -33,12 +35,15 @@ public class WebHookService {
                 columnMap.put(column.getTitle(), column.getId());
 
             Set<Row> rowsToProcess = getRowsToProcess(inputSheet.getRows());
+            rowSkipCount = 0;
             for (Row row: rowsToProcess)
                 processRow(row);
 
             ReferenceSheets.setSheet(inputSheetId, inputSheet);
             System.out.println("Aktualisierung abgeschlossen.");
-            System.out.println("In " + rowsToProcess.size() + " Zeile(n) wurden neue Haken gefunden und verarbeitet.");
+            System.out.println("In " + rowsToProcess.size() + " Zeile(n) wurden neue Haken gefunden.");
+            if (rowSkipCount > 0)
+                System.out.println(rowSkipCount + " Zeile(n) mit neuen Haken wurde(n) ignoriert, weil das Label weder \"Mädchenfilm\" noch \"Eleven\" war.");
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Verarbeitung der neuen Projekteinträge ist gescheitert.");
@@ -77,6 +82,7 @@ public class WebHookService {
         Long targetWorkspaceId = getTargetWorkSpaceId(cells.get(Col.LABEL));
         if (targetWorkspaceId == null) {
             System.out.println("Überspringe Tabellenzeile, weil das Label weder \"Mädchenfilm\" noch \"Eleven\" ist.");
+            rowSkipCount += 1;
             return;
         }
 
