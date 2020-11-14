@@ -36,6 +36,11 @@ public class WebHookService {
 
             Set<Row> rowsToProcess = getRowsToProcess(inputSheet.getRows());
             rowSkipCount = 0;
+            for (Row row: rowsToProcess) {
+                Map<Col, Cell> cells = buildCellMap(row);
+                Map<Col, String> cellEntries = getCellEntries(cells);
+                failOnMissingMandatoryCellEntries(cellEntries);
+            }
             for (Row row: rowsToProcess)
                 processRow(row);
 
@@ -68,14 +73,16 @@ public class WebHookService {
         return rowsToProcess;
     }
 
-    private void processRow(Row row) throws Exception {
-        Map<Col, Cell> cells = buildCellMap(row);
-        Map<Col, String> cellEntries = getCellEntries(cells);
-
+    private void failOnMissingMandatoryCellEntries(Map<Col, String> cellEntries) throws NoSuchElementException {
         if (!(StringUtils.hasText(cellEntries.get(Col.JOB_NR))
                 && StringUtils.hasText(cellEntries.get(Col.KUNDE))
                 && StringUtils.hasText(cellEntries.get(Col.PROJEKT))))
             throw new NoSuchElementException("Breche ab, weil nicht alle nötigen Zellen ausgefüllt sind.");
+    }
+
+    private void processRow(Row row) throws SmartsheetException {
+        Map<Col, Cell> cells = buildCellMap(row);
+        Map<Col, String> cellEntries = getCellEntries(cells);
 
         String combinedName = combineName(cellEntries.get(Col.JOB_NR), cellEntries.get(Col.KUNDE), cellEntries.get(Col.PROJEKT));
 
