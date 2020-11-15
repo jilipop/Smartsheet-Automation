@@ -123,21 +123,6 @@ public class WebHookService {
         else return "";
     }
 
-    private void handleTimingCheckMark(boolean isMfWorkspace, String combinedName, Map<Col, String> cellEntries) throws SmartsheetException {
-        long targetId = isMfWorkspace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
-        Sheet timingSheet = repository.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
-
-        if (timingSheet != null) {
-            timingSheet = repository.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
-            Row row1 = updateRow(timingSheet, 0, Map.of("Phase", cellEntries.get(Col.PROJEKT)));
-            Row row2 = updateRow(timingSheet, 1, Map.of("Phase", cellEntries.get(Col.JOB_NR)));
-            Row row3 = updateRow(timingSheet, 2, Map.of("Phase", cellEntries.get(Col.KUNDE)));
-            Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + cellEntries.get(Col.AGENTUR)));
-            Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + cellEntries.get(Col.ASP)));
-            repository.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
-        }
-    }
-
     private void handleKvCheckMark(Long targetWorkspaceId, String combinedName, String projectName, String asp) throws SmartsheetException {
         long targetId = repository.copyFolderToWorkspace(
                 ids.get(Id.TEMPLATE_FOLDER),
@@ -156,6 +141,21 @@ public class WebHookService {
             finanzSheet = repository.loadSheetWithRelevantRows(finanzSheet, Set.of(1));
             Row firstRow = updateRow(finanzSheet, 0, Map.of("Position", projectName, "Empfänger", asp));
             repository.insertRowsIntoSheet(finanzSheet, List.of(firstRow));
+        }
+    }
+
+    private void handleTimingCheckMark(boolean isMfWorkspace, String combinedName, Map<Col, String> cellEntries) throws SmartsheetException {
+        long targetId = isMfWorkspace ? ids.get(Id.TIMING_WORKSPACE_MF) : ids.get(Id.TIMING_WORKSPACE_ELEVEN);
+        Sheet timingSheet = repository.copySheetToWorkspace(ids.get(Id.TIMING_TEMPLATE), targetId, combinedName, "Timing");
+
+        if (timingSheet != null) {
+            timingSheet = repository.loadSheetWithRelevantRows(timingSheet, Set.of(1, 2, 3, 4, 5));
+            Row row1 = updateRow(timingSheet, 0, Map.of("Phase", cellEntries.get(Col.PROJEKT)));
+            Row row2 = updateRow(timingSheet, 1, Map.of("Phase", cellEntries.get(Col.JOB_NR)));
+            Row row3 = updateRow(timingSheet, 2, Map.of("Phase", cellEntries.get(Col.KUNDE)));
+            Row row4 = updateRow(timingSheet, 3, Map.of("Phase", "Agentur: " + cellEntries.get(Col.AGENTUR)));
+            Row row5 = updateRow(timingSheet, 4, Map.of("Phase", "Producer: " + cellEntries.get(Col.ASP)));
+            repository.insertRowsIntoSheet(timingSheet, List.of(row1, row2, row3, row4, row5));
         }
     }
 
