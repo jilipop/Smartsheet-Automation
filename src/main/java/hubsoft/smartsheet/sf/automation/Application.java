@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Application {
 	static {
-		// These lines enable logging to the console
 		System.setProperty("Smartsheet.trace.parts", "RequestBodySummary,ResponseBodySummary");
 		System.setProperty("Smartsheet.trace.pretty", "true");
 	}
