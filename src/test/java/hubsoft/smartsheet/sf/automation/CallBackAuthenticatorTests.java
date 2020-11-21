@@ -57,23 +57,34 @@ public class CallBackAuthenticatorTests {
     }
 
     @BeforeEach
-    public void resetInstanceAndStubSharedSecret() {
+    public void resetInstance() {
         authenticator = new CallBackAuthenticator(mockConstants);
-        Mockito.when(mockConstants.getSharedSecrets()).thenReturn(Map.of(inputSheetId, sharedSecret));
     }
 
     @Test
-    @DisplayName("Given a request body and a matching shared secret return true")
+    @DisplayName("Given a request body and a matching shared secret, return true")
     public void testSuccessfulAuthentication() throws GeneralSecurityException {
+        Mockito.when(mockConstants.getSharedSecrets()).thenReturn(Map.of(inputSheetId, sharedSecret));
+
         boolean authenticationResult = authenticator.authenticate(correctHmacHeader, callbackBody, inputSheetId);
 
         assertThat(authenticationResult).isEqualTo(true);
     }
 
     @Test
-    @DisplayName("Given a request body and an incorrect shared secret return false")
+    @DisplayName("Given a request body and an incorrect shared secret, return false")
     public void testFailingAuthentication() throws GeneralSecurityException {
+        Mockito.when(mockConstants.getSharedSecrets()).thenReturn(Map.of(inputSheetId, sharedSecret));
+
         boolean authenticationResult = authenticator.authenticate(incorrectHmacHeader, callbackBody, inputSheetId);
+
+        assertThat(authenticationResult).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("Given a request body and no shared secret, return false")
+    public void testFailOnMissingHmacHeader() throws GeneralSecurityException {
+        boolean authenticationResult = authenticator.authenticate(null, callbackBody, inputSheetId);
 
         assertThat(authenticationResult).isEqualTo(false);
     }

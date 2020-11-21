@@ -17,6 +17,8 @@ public class CallBackAuthenticator {
     }
 
     public boolean authenticate(String hmacHeader, String requestBody, long inputSheetId) throws GeneralSecurityException {
+        if (hmacHeader == null)
+            return false;
         return hmacHeader.equals(calculateHmac(constants.getSharedSecrets().get(inputSheetId), requestBody));
     }
 
