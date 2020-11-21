@@ -136,7 +136,6 @@ public class WebHookControllerTests {
     @Test
     @DisplayName("When a healthy verification request arrives, answer it correctly")
     public void testVerificationResponseWithHealthyBody() throws Exception {
-        Mockito.when(mockMapper.readValue(anyString(), eq(VerificationRequest.class))).thenReturn(verificationRequest);
         Mockito.when(mockMapper.writeValueAsString(notNull())).thenReturn(asJsonString(hookResponseBody));
         ArgumentCaptor<HookResponseBody> hookResponseBodyCaptor = ArgumentCaptor.forClass(HookResponseBody.class);
         String challengeString = verificationRequest.getChallenge();
@@ -155,14 +154,12 @@ public class WebHookControllerTests {
     }
 
     @Test
-    @DisplayName("When a verification request arrives but the body can't be read, send back the challenge header and status 200")
-    public void testVerificationResponseWhenBodyIsUnreadable() throws Exception {
-        Mockito.when(mockMapper.readValue(anyString(), eq(VerificationRequest.class))).thenThrow(JsonProcessingException.class);
+    @DisplayName("When a verification request arrives but the body is missing, send back the challenge header and status 200")
+    public void testVerificationResponseWhenBodyIsMissing() throws Exception {
         String challengeString = verificationRequest.getChallenge();
 
         mockMvc.perform(post("/smartsheet")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("Non-JSON-String")
                 .header("Smartsheet-Hook-Challenge", challengeString)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(header().string("Smartsheet-Hook-Response", challengeString))
