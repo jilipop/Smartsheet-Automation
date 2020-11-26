@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import hubsoft.smartsheet.sf.automation.enums.Col;
 
@@ -31,16 +32,15 @@ public class WebHookService {
             Sheet inputSheet = repository.getSheet(inputSheetId);
             referenceSheet = ReferenceSheets.getSheet(inputSheetId);
 
-            for (Column column: inputSheet.getColumns())
-                columnMap.put(column.getTitle(), column.getId());
+            inputSheet.getColumns().forEach(column -> columnMap.put(column.getTitle(), column.getId()));
 
             Set<Row> rowsToProcess = getRowsToProcess(inputSheet.getRows());
             rowSkipCount = 0;
-            for (Row row: rowsToProcess) {
-                Map<Col, Cell> cells = buildCellMap(row);
-                Map<Col, String> cellEntries = getCellEntries(cells);
-                failOnMissingMandatoryCellEntries(cellEntries);
-            }
+            rowsToProcess.stream()
+                    .map(this::buildCellMap)
+                    .map(this::getCellEntries)
+                    .forEach(this::failOnMissingMandatoryCellEntries);
+
             for (Row row: rowsToProcess)
                 processRow(row);
 
@@ -208,8 +208,7 @@ public class WebHookService {
                     .filter(cell -> cell.getColumnId().equals(id))
                     .findFirst()
                     .orElse(null);
-            Col col = colNames.get(name);
-            cellMap.put(col, targetCell);
+            cellMap.put(colNames.get(name), targetCell);
         });
         return cellMap;
     }
@@ -243,9 +242,8 @@ public class WebHookService {
         Row rowToUpdate = sheetToUpdate.getRows().get(rowIndex);
         List<Cell> cellsToUpdate = new ArrayList<>();
 
-        Map<String, Long> newColumnMap = new HashMap<>();
-        for (Column column : sheetToUpdate.getColumns())
-            newColumnMap.put(column.getTitle(), column.getId());
+        Map<String, Long> newColumnMap = sheetToUpdate.getColumns().stream()
+                .collect(Collectors.toMap(Column::getTitle, Column::getId));
 
         cellData.forEach((columnTitle, value) -> {
             Cell targetCell = rowToUpdate.getCells().stream()
