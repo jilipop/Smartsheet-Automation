@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import hubsoft.smartsheet.sf.automation.enums.Col;
 
@@ -56,21 +57,16 @@ public class WebHookService {
     }
 
     private Set<Row> getRowsToProcess(List<Row> rows){
-        Set<Row> rowsToProcess = new HashSet<>();
         try {
-            for (Row row : rows) {
-                Cell kvCell = getCellByColumnTitle(row, "KV");
-                Cell tCell = getCellByColumnTitle(row, "T");
-                Cell slCell = getCellByColumnTitle(row, "SL");
-                if (newCheckmark(row, kvCell) || newCheckmark(row, tCell) || newCheckmark(row, slCell)){
-                    rowsToProcess.add(row);
-                }
-            }
+            return rows.stream()
+                    .filter(row -> Stream.of("KV", "T", "SL")
+                            .anyMatch(columnTitle -> newCheckmark(row, getCellByColumnTitle(row, columnTitle))))
+                    .collect(Collectors.toSet());
         } catch (Exception ex) {
             System.out.println("Fehler : " + ex.getMessage());
             System.out.println("Die Prüfung auf neue Projekteinträge ist gescheitert.");
         }
-        return rowsToProcess;
+        return Set.of();
     }
 
     private void failOnMissingMandatoryCellEntries(Map<Col, String> cellEntries) throws NoSuchElementException {
